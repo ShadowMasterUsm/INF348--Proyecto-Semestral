@@ -10,7 +10,7 @@ Este es el repositorio del "Grupo 06", cuyos intgrantes son:
 
 ## Wiki
 
-puede acceder a la wiki mediante el siguiente [enlace]()
+puede acceder a la wiki mediante el siguiente [enlace](https://gitlab.com/grupo-0006/GRUPO06-2025-PROYINF/-/wikis/home)
 
 ## Videos
 
