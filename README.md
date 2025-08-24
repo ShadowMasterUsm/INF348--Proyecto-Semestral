@@ -3,9 +3,9 @@
 Este es el repositorio del "Grupo 06", cuyos intgrantes son:
 
 * intgrante 1 - 202203018-6
-* intgrante 2 - 202373080-k
-* intgrante 3 - 
-* intgrante 4 - 202373034-7
+* intgrante 2 - 202373080-7
+* intgrante 3 - 202203002-K
+* intgrante 4 - 202373034-3
 * **Tutor**: Paula Castillo 
 
 ## Wiki
