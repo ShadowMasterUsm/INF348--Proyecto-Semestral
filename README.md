@@ -14,6 +14,6 @@ puede acceder a la wiki mediante el siguiente [enlace]()
 
 ## Videos
 
-*[Video presentación cliente](https://aula.usm.cl/pluginfile.php/7621199/mod_resource/content/2/video1352931478.mp4)
+* [Video presentación cliente](https://aula.usm.cl/pluginfile.php/7621199/mod_resource/content/2/video1352931478.mp4)
 
 ## Aspectos tecnicos relevantes
