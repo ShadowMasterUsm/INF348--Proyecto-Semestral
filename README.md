@@ -2,10 +2,10 @@
 
 Este es el repositorio del "Grupo 06", cuyos intgrantes son:
 
-* intgrante 1 - 202203018-6
-* intgrante 2 - 202373080-7
-* intgrante 3 - 202203002-K
-* intgrante 4 - 202373034-3
+* Monterrat Antunez - 202203018-6
+* Axel Tapia - 202373080-7
+* Maria-Belen Segura - 202203002-K
+* Luka Caric - 202373034-3
 * **Tutor**: Paula Castillo 
 
 ## Wiki
