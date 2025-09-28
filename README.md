@@ -31,6 +31,9 @@ Puede acceder a la wiki mediante el siguiente [enlace](https://gitlab.com/grupo-
 
 ## Para levantar el proyecto
 
-### Paso 1:
-Descargar el archivo proyecto-base-main.zip y descomprimirlo.
+* Paso 1: Descargar el archivo proyecto-base-main.zip y descomprimirlo.
+* Paso 2: En la carpeta principal abrir una terminal levantar MySQL con el siguiente comando:
+```
+docker compose up --build
+```
 
