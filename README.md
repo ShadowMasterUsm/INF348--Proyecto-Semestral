@@ -36,4 +36,20 @@ Puede acceder a la wiki mediante el siguiente [enlace](https://gitlab.com/grupo-
 ```
 docker compose up --build
 ```
-
+* Paso 3: Una vez listo, crear las bases de datos con el comando:
+```
+docker exec -it proyecto-base-mysql-1 mysql -uroot -p
+```
+Donde "proyecto-base-mysql-1" es el nombre del contenedor. Si no coincide, revisarlo con "docker ps". Luego, ingresar la clave: **password**.
+```
+CREATE DATABASE BD06_TRAMITACION;
+CREATE DATABASE BD06_VALIDACIONES;
+EXIT;
+```
+* Paso 4: Levantar API, dirigiéndose a la ruta de la carpeta API_TRAMITACION:
+```
+cd API_TRAMITACION
+docker compose up --build -d
+cd ..
+```
+* Paso 5: Verificar la instalación. En el navegador, buscar: http://localhost:8080/
