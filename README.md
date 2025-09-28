@@ -29,6 +29,8 @@ Puede acceder a la wiki mediante el siguiente [enlace](https://gitlab.com/grupo-
 - Se documentaron las Historias de Usuario en la Wiki con enlaces directos a cada Issue. 
 - Se añadieron los **Diagramas de Secuencia** de cada HU en la Wiki para representar gráficamente la interacción entre actores, interfaces y entidades del sistema.  
 
-## Para levantar el proyecto:
-* paso 1:
-* paso 2:
+## Para levantar el proyecto
+
+### Paso 1:
+Descargar el archivo proyecto-base-main.zip y descomprimirlo.
+
