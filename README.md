@@ -38,7 +38,7 @@ docker compose up --build
 ```
 * Paso 3: Una vez listo, crear las bases de datos con el comando:
 ```
-docker exec -it proyecto-base-mysql-1 mysql -uroot -p
+docker exec -it proyecto-base-main-mysql-1 mysql -uroot -p
 ```
 Donde "proyecto-base-mysql-1" es el nombre del contenedor. Si no coincide, revisarlo con "docker ps". Luego, ingresar la clave: **password**.
 ```
