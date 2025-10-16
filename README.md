@@ -32,24 +32,25 @@ Puede acceder a la wiki mediante el siguiente [enlace](https://gitlab.com/grupo-
 ## Para levantar el proyecto
 
 * Paso 1: Descargar el archivo proyecto-base-main.zip y descomprimirlo.
-* Paso 2: En la carpeta principal abrir una terminal levantar MySQL con el siguiente comando:
+* Paso 2: En la carpeta principal abrir una terminal y levantar los contenedores de MySQL y API_TRAMITACION con el siguiente comando:
 ```
-docker compose up --build
+docker compose up --build -d
 ```
-* Paso 3: Una vez listo, crear las bases de datos con el comando:
+* Paso 3: Verificar la instalación. En el navegador, buscar: http://localhost:8080/
+
+### Opcional
+* Paso X: Para verificar si los contenedores están corriendo:
+```
+docker ps -a
+```
+Deben aparecer los dos contenedores.
+* Paso X: Para ver las tablas de la base de datos de API_TRAMITACION:
 ```
 docker exec -it proyecto-base-main-mysql-1 mysql -uroot -p
 ```
 Donde "proyecto-base-mysql-1" es el nombre del contenedor. Si no coincide, revisarlo con "docker ps". Luego, ingresar la clave: **password**.
 ```
-CREATE DATABASE BD06_TRAMITACION;
-CREATE DATABASE BD06_VALIDACIONES;
-EXIT;
+SHOW DATABASES;         // Mostrar bases de datos
+USE BD06_TRAMITACION;   // Seleccionar base de datos
+SHOW TABLES;            // Mostrar tablas de la base de datos seleccionada
 ```
-* Paso 4: Levantar API, dirigiéndose a la ruta de la carpeta API_TRAMITACION:
-```
-cd API_TRAMITACION
-docker compose up --build -d
-cd ..
-```
-* Paso 5: Verificar la instalación. En el navegador, buscar: http://localhost:8080/
