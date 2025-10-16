@@ -9,16 +9,26 @@ services:
       MYSQL_ROOT_PASSWORD: password
     volumes:
       - ./API_EJEMPLO/init:/docker-entrypoint-initdb.d
+      - ./API_TRAMITACION/init:/docker-entrypoint-initdb.d
 
 # Contenedor para la API de ejemplo
-  api_ejemplo:
-    build: ./API_EJEMPLO
-    image: api_ejemplo
-    volumes:
-      - ./API_EJEMPLO/:/usr/app
-      - /usr/app/node_modules
-    restart: on-failure
+#  api_ejemplo:
+#    build: ./API_EJEMPLO
+#    image: api_ejemplo
+#    volumes:
+#      - ./API_EJEMPLO/:/usr/app
+#      - /usr/app/node_modules
+#    restart: on-failure
+#    ports:
+#      - "8082:8082"
+#    depends_on:
+#      - mysql
+
+  api_tramitacion:
+    build: ./API_TRAMITACION
+    image: api_tramitacion
     ports:
-      - "8082:8082"
+      - "8080:8080"
     depends_on:
       - mysql
+    restart: unless-stopped
