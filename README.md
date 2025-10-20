@@ -36,7 +36,7 @@ Puede acceder a la wiki mediante el siguiente [enlace](https://gitlab.com/grupo-
 ```
 docker compose up --build -d
 ```
-* Paso 3: Verificar la instalación. En el navegador, buscar: http://localhost:8080/
+* Paso 3: Verificar la instalación. En el navegador, buscar: http://localhost:8000
 
 ### Opcional
 * Paso X: Para verificar si los contenedores están corriendo:
