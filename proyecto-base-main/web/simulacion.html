@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="es">
+
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Simulador</title>
+        <link rel="stylesheet" href="css/style.css">
+        <script defer src="js/simulacion.js"></script>
+    </head>
+
+    <body>
+
+        <header class="navbar">
+            <div class="brand">Simulación de Crédito</div>
+            <nav class="nav-links">
+                <a href="index.html">Inicio</a>
+                <a href="simulacion.html">Simulación</a>
+            </nav>
+        </header>
+
+        <main class="container">
+            <h1>Simula tu crédito paso a paso</h1>
+
+            <!-- Paso 1: Tipo de crédito -->
+            <section class="step active" id="step1">
+                <h2>1. Selecciona el tipo de crédito</h2>
+
+                <label for="tipo">Tipo de crédito</label>
+                <select id="tipo">
+                    <option value="" disabled selected>Selecciona tipo de crédito</option>
+                    <option value="consumo">Consumo</option>
+                    <option value="hipotecario">Hipotecario</option>
+                </select>
+
+                <div class="error" id="errorTipo" style="color:red;"></div>
+                <button id="next1" class="btn btn-primary">Continuar</button>
+            </section>
+
+            <!-- Paso 2: Datos personales -->
+            <section class="step" id="step2">
+                <h2>2. Ingresa tus datos personales</h2>
+
+                <label>RUT</label>
+                <input type="text" id="rut" placeholder="Ingresa tu RUT">
+                <div class="error" id="errorRut" style="color:red;"></div>
+
+                <label>Nombre</label>
+                <input type="text" id="nombre" placeholder="Ingresa tu nombre y apellido">
+                <div class="error" id="errorNombre" style="color:red;"></div>
+
+                <label>Correo</label>
+                <input type="email" id="correo" placeholder="Ingresa tu correo">
+                <div class="error" id="errorCorreo" style="color:red;"></div>
+
+                <label>Teléfono</label>
+                <input type="tel" id="telefono" placeholder="Ingresa tu número">
+                <div class="error" id="errorTelefono" style="color:red;"></div>
+
+                <label for="region">Región</label>
+                <select id="region">
+                    <option value="" disabled selected>Selecciona región</option>
+                </select>
+                <div class="error" id="errorRegion" style="color:red;"></div>
+
+                <label for="comuna">Comuna</label>
+                <select id="comuna">
+                    <option value="" disabled selected>Selecciona comuna</option>
+                </select>
+                <div class="error" id="errorComuna" style="color:red;"></div>
+
+                <button id="back2" class="btn btn-secondary">Volver</button>
+                <button id="next2" class="btn btn-primary">Continuar</button>
+            </section>
+
+            <!-- Paso 3: Datos del crédito -->
+            <section class="step" id="step3">
+                <h2>3. Ingresa los datos del crédito</h2>
+
+                <label>Ingresa el monto de tu crédito</label>
+                <input type="number" id="monto" min="1000000" max="60000000" placeholder="Ingresa el monto">
+                <div class="error" id="errorMonto" style="color:red;"></div>
+
+                <label>Número de cuotas</label>
+                <select id="cuotas">
+                    <option value="" disabled selected>Selecciona cuotas</option>
+                </select>
+                <div class="error" id="errorCuotas" style="color:red;"></div>
+
+                <label>Mes de primer pago</label>
+                <select id="mesPago"></select>
+                <div class="error" id="errorMesPago" style="color:red;"></div>
+
+                <label>Día de pago</label>
+                <select id="diaPago"></select>
+                <div class="error" id="errorDiaPago" style="color:red;"></div>
+
+                <button id="back3" class="btn btn-secondary">Volver</button>
+                <button id="next3" class="btn btn-primary">Continuar</button>
+            </section>
+
+            <!-- Paso 4: Detalles del crédito -->
+            <section class="step" id="step4">
+                <h2>4. Detalle del crédito</h2>
+
+                <div style="display:flex; gap:20px;">
+                    <div id="resumen" style="flex:1; border:1px solid #ccc; padding:16px;"></div>
+                    <div id="seguros" style="flex:1; border:1px solid #ccc; padding:16px;">
+                        <h3>Seguros disponibles</h3>
+                    </div>
+                </div>
+
+                <button id="back4" class="btn btn-secondary">Volver</button>
+                <button class="btn btn-accent">Finalizar</button>
+            </section>
+        </main>
+    </body>
+</html>
