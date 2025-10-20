@@ -32,3 +32,11 @@ services:
     depends_on:
       - mysql
     restart: unless-stopped
+
+  web:
+    image: nginx:alpine
+    container_name: proyecto-web
+    ports:
+      - "8000:80"        # Puerto 8000 en tu máquina, mapea al 80 del contenedor
+    volumes:
+      - ./web:/usr/share/nginx/html:ro
