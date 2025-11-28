@@ -1,118 +1,155 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClaroFin - Simulador de Crédito</title>
+    <link rel="stylesheet" href="css/simulacion.css">
+    <script defer src="js/simulacion.js"></script>
+</head>
 
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Simulador</title>
-        <link rel="stylesheet" href="css/style.css">
-        <script defer src="js/simulacion.js"></script>
-    </head>
+<body>
+    <!-- Navbar -->
+    <header class="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="brand">
+                <img src="assets/logo.png" alt="Logo ClaroFin" class="logo">
+            </a>
 
-    <body>
-
-        <header class="navbar">
-            <div class="brand">Simulación de Crédito</div>
-            <nav class="nav-links">
-                <a href="index.html">Inicio</a>
-                <a href="simulacion.html">Simulación</a>
+            <nav class="nav-links" id="navLinks" data-open="false">
+                <a href="#seguros">SEGUROS</a>
+                <a href="#creditos">CRÉDITOS</a>
+                <a href="#contacto">CONTACTO</a>
             </nav>
-        </header>
 
-        <main class="container">
-            <h1>Simula tu crédito paso a paso</h1>
+            <button class="burger" aria-label="Abrir menú" aria-expanded="false">☰</button>
+            <a href="#acceso" class="acceso">ACCESO</a>
+        </div>
+    </header>
 
-            <!-- Paso 1: Tipo de crédito -->
-            <section class="step active" id="step1">
-                <h2>1. Selecciona el tipo de crédito</h2>
+    <main>
+        <section class="hero">
+            <h1>Simulación de Crédito</h1>
+        </section>
 
-                <label for="tipo">Tipo de crédito</label>
-                <select id="tipo">
-                    <option value="" disabled selected>Selecciona tipo de crédito</option>
-                    <option value="consumo">Consumo</option>
-                    <option value="hipotecario">Hipotecario</option>
-                </select>
+        <h2 class="main-title">Simula tu Crédito paso a paso</h2>
 
-                <div class="error" id="errorTipo" style="color:red;"></div>
-                <button id="next1" class="btn btn-primary">Continuar</button>
-            </section>
+        <section id="paso1" class="paso activo" data-step="1">
+            <h3>Tipo de Crédito</h3>
+            <p>Elige el tipo de crédito que mejor se adapta a lo que necesitas. Así te mostramos opciones que se ajusten a ti.</p>
+            <label for="tipo-credito">Tipo de crédito</label>
+            <select id="tipo-credito" name="tipo-credito">
+                <option value="" selected disabled hidden>Selecciona...</option>
+                <option value="consumo">Consumo</option>
+            </select>
+            <div class="botones">
+                <button class="btn continuar">CONTINUAR</button>
+            </div>
+        </section>
 
-            <!-- Paso 2: Datos personales -->
-            <section class="step" id="step2">
-                <h2>2. Ingresa tus datos personales</h2>
+        <section id="paso2" class="paso inactivo" data-step="2">
+            <h3>Datos Personales</h3>
+            <p>Solo necesitamos algunos datos básicos para personalizar tu simulación. No te preocupes: nunca compartiremos tu información.</p>
+            <div class="form-grid">
+                <div class="campo">
+                    <label for="rut">RUT</label>
+                    <input id="rut" type="text" placeholder="Ingresa tu RUT">
+                </div>
+                
+                
+                <div class="campo">
+                    <label for="renta">Renta mensual</label>
+                    <select name="renta" id="renta">
+                        <option value="" selected disabled hidden>Selecciona...</option>
+                        <option value="A">Menos de $500.000</option>
+                        <option value="B">Desde $500.001 a $1.000.000</option>
+                        <option value="C">Desde $1.000.001 a $2.000.000</option>
+                        <option value="D">Desde $2.000.001 a $3.500.000</option>
+                        <option value="E">Más de $3.500.000</option>
+                    </select>
+                </div>
+            </div>
 
-                <label>RUT</label>
-                <input type="text" id="rut" placeholder="Ingresa tu RUT">
-                <div class="error" id="errorRut" style="color:red;"></div>
+            
+            <div class="botones">
+                <button class="btn volver">VOLVER</button>
+                <button class="btn continuar">CONTINUAR</button>
+            </div>
+        </section>
 
-                <label>Nombre</label>
-                <input type="text" id="nombre" placeholder="Ingresa tu nombre y apellido">
-                <div class="error" id="errorNombre" style="color:red;"></div>
+        <section id="paso3" class="paso inactivo" data-step="3">
+            <h3>Monto a Solicitar</h3>
+            <p>Indica el monto que te gustaría solicitar.</p>
+            <label>Monto</label>
+            <input id="monto" type="text" placeholder="Ingresa un monto">
 
-                <label>Correo</label>
-                <input type="email" id="correo" placeholder="Ingresa tu correo">
-                <div class="error" id="errorCorreo" style="color:red;"></div>
+            <div class="botones">
+                <button class="btn volver">VOLVER</button>
+                <button class="btn continuar">CONTINUAR</button>
+            </div>
+        </section>
 
-                <label>Teléfono</label>
-                <input type="tel" id="telefono" placeholder="Ingresa tu número">
-                <div class="error" id="errorTelefono" style="color:red;"></div>
+        <section id="paso4" class="paso inactivo" data-step="4">
+            <h3>Detalles de tu Crédito</h3>
+            <p>Elige en cuántas cuotas quieres pagar y cuándo comenzar. Nosotros hacemos los cálculos por ti.</p>
+            <label>Número de cuotas</label>
+            <input type="text" placeholder="Ingresa el número de cuotas">
 
-                <label for="region">Región</label>
-                <select id="region">
-                    <option value="" disabled selected>Selecciona región</option>
-                </select>
-                <div class="error" id="errorRegion" style="color:red;"></div>
-
-                <label for="comuna">Comuna</label>
-                <select id="comuna">
-                    <option value="" disabled selected>Selecciona comuna</option>
-                </select>
-                <div class="error" id="errorComuna" style="color:red;"></div>
-
-                <button id="back2" class="btn btn-secondary">Volver</button>
-                <button id="next2" class="btn btn-primary">Continuar</button>
-            </section>
-
-            <!-- Paso 3: Datos del crédito -->
-            <section class="step" id="step3">
-                <h2>3. Ingresa los datos del crédito</h2>
-
-                <label>Ingresa el monto de tu crédito</label>
-                <input type="number" id="monto" min="1000000" max="60000000" placeholder="Ingresa el monto">
-                <div class="error" id="errorMonto" style="color:red;"></div>
-
-                <label>Número de cuotas</label>
-                <select id="cuotas">
-                    <option value="" disabled selected>Selecciona cuotas</option>
-                </select>
-                <div class="error" id="errorCuotas" style="color:red;"></div>
-
-                <label>Mes de primer pago</label>
-                <select id="mesPago"></select>
-                <div class="error" id="errorMesPago" style="color:red;"></div>
-
-                <label>Día de pago</label>
-                <select id="diaPago"></select>
-                <div class="error" id="errorDiaPago" style="color:red;"></div>
-
-                <button id="back3" class="btn btn-secondary">Volver</button>
-                <button id="next3" class="btn btn-primary">Continuar</button>
-            </section>
-
-            <!-- Paso 4: Detalles del crédito -->
-            <section class="step" id="step4">
-                <h2>4. Detalle del crédito</h2>
-
-                <div style="display:flex; gap:20px;">
-                    <div id="resumen" style="flex:1; border:1px solid #ccc; padding:16px;"></div>
-                    <div id="seguros" style="flex:1; border:1px solid #ccc; padding:16px;">
-                        <h3>Seguros disponibles</h3>
-                    </div>
+            <div class="form-grid">
+                <div class="campo">
+                    <label for="mes-pago">Primer mes de pago</label>
+                    <select id="mes-pago">
+                        <option value="" selected disabled hidden>Selecciona...</option>
+                    </select>
                 </div>
 
-                <button id="back4" class="btn btn-secondary">Volver</button>
-                <button class="btn btn-accent">Finalizar</button>
-            </section>
-        </main>
-    </body>
+                <div class="campo">
+                    <label for="dia-pago">Día de pago</label>
+                    <select id="dia-pago">
+                        <option value="" selected disabled hidden>Selecciona...</option>
+                    </select>
+                </div>    
+                
+            </div>
+            
+            <div class="botones">
+                <button class="btn volver">VOLVER</button>
+                <button class="btn continuar">CONTINUAR</button>
+            </div>
+        </section>
+
+        <section id="paso5" class="paso inactivo" data-step="5">
+            <h3>Seguros Asociados</h3>
+            <p>¿Quieres mayor tranquilidad? Agrega seguros opcionales para protegerte a ti y a quienes más quieres.</p>
+
+            <label class="switch-container">
+                <div class="switch-wrapper">
+                    <input type="checkbox" id="seguroCesantia" class="switch-input">
+                    <span class="switch-slider"></span>
+                </div>
+                <div class="switch-text">
+                    <sapn class="switch-title">Seguro de Cesantía</sapn>
+                    <span class="switch-desc">Cubre tus cuotas si pierdes tu empleo.</span>
+                </div>
+            </label>
+
+            <label class="switch-container">
+                <div class="switch-wrapper">
+                    <input type="checkbox" id="seguroDesgravamen" class="switch-input">
+                    <span class="switch-slider"></span>
+                </div>
+                <div class="switch-text">
+                    <span class="switch-title">Seguro de Desgravamen</span>
+                    <span class="switch-desc">Cubre el saldo del crédito en caso de fallecimiento.</span>
+                </div>
+            </label>
+
+
+            <div class="botones">
+                <button class="btn volver">VOLVER</button>
+                <button class="btn ver-simulacion">VER SIMULACIÓN</button>
+            </div>
+        </section> 
+    </main>
+</body>
 </html>

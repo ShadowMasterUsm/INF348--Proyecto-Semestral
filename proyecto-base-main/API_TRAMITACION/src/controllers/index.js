@@ -11,7 +11,67 @@ const createTable = (req, res) => {
     });
 };
 
+const crearSimulacion = (req, res) => {
+    const { rut, monto, cuotas } = req.body;
+
+    const query = `
+        INSERT INTO simulacion (rut, monto, cuotas)
+        VALUES (?, ?, ?)
+    `;
+
+    database.query(query, [rut, monto, cuotas], (err, result) => {
+        if (err) {
+            console.error("Error al guardar simulación:", err);
+            return res.status(500).json({
+                ok: false,
+                error: "Error al guardar en la BD"
+            });
+        }
+
+        return res.status(201).json({
+            ok: true,
+            mensaje: "Simulación guardada correctamente",
+            id_simulacion: result.insertId
+        });
+    });
+};
 
 module.exports = {
-    createTable
+    createTable,
+    crearSimulacion
 };
+
+
+
+
+
+
+
+
+
+/*
+const crearSimulacion = (req, res) => {
+    try {
+        console.log("Simulación recibida:", req.body);
+        
+        res.status(201).json({
+            ok: true,
+            mensaje: "Simulación recibida correctamente",
+            data: req.body
+        });
+
+    } catch (error) {
+        console.error("Error al guardar simulación:", error);
+
+        res.status(500).json({
+            ok: false,
+            error: "Error interno al guardar la simulación"
+        });
+    }
+}
+
+module.exports = {
+    createTable,
+    crearSimulacion
+};
+*/

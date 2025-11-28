@@ -1,378 +1,324 @@
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener("DOMContentLoaded", () => {
+    const inputRut = document.querySelector("#rut");
 
-    const steps = document.querySelectorAll('.step');
+    if (inputRut) {
+        inputRut.addEventListener("input", () => {
+            let value = inputRut.value;
 
-    function showStep(num) {
-        steps.forEach((s, i) => s.classList.toggle('active', i == num - 1));
+            value = value.replace(/[^0-9kK]/g, "").toUpperCase();
+            value = value.replace(/K(.*)K/, "K");
+            value = value.slice(0, 10);
+            let cuerpo = value.slice(0, -1);
+            let dv = value.slice(-1);
+            cuerpo = cuerpo.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+            inputRut.value = cuerpo + (dv ? "-" + dv : "");
+        });
     }
 
-    // ---------- PASO 1 ----------
-    document.getElementById('next1').addEventListener('click', () => {
-        const tipo = document.getElementById('tipo').value;
-        const error = document.getElementById('errorTipo');
-        if (!tipo) {
-            error.textContent = 'Debes seleccionar un tipo de crédito';
-            return;
+    const inputMonto = document.querySelector("#monto");
+
+    if (inputMonto) {
+        inputMonto.addEventListener("input", () => {
+            let value = inputMonto.value;
+
+            value = value.replace(/[^\d]/g, "");
+            if (value === "") {
+                inputMonto.value = "$";
+                return;
+            }
+
+            value = parseInt(value, 10).toLocaleString("es-CL");
+            inputMonto.value = "$" + value;
+        });
+
+        inputMonto.addEventListener("focus", () => {
+            if (inputMonto.value.trim() === "") {
+                inputMonto.value = "$";
+            }
+            setTimeout(() => {
+                inputMonto.setSelectionRange(inputMonto.value.length, inputMonto.value.length);
+            }, 0);
+        });
+    }
+
+    const selectMesPago = document.getElementById("mes-pago");
+
+    if (selectMesPago) {
+        const meses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+        const hoy = new Date();
+        let mesActual = hoy.getMonth();
+
+        selectMesPago.innerHTML = "<option value='' disabled selected>Selecciona el mes</option>";
+        
+        for (let i = 1; i <= 3; i++) {
+            let mesIndex = (mesActual + i) % 12;
+            let mesNombre = meses[mesIndex];
+
+            let option = document.createElement("option");
+            option.value = mesIndex + 1;
+            option.textContent = mesNombre;
+
+            selectMesPago.appendChild(option);
         }
-        error.textContent = '';
-        showStep(2);
+    }
+
+    const selectDiaPago = document.getElementById("dia-pago");
+
+    if (selectMesPago && selectDiaPago) {
+        selectMesPago.addEventListener("change", () => {
+            const mes = parseInt(selectMesPago.value); // 1 a 12
+            const añoActual = new Date().getFullYear();
+            const diasEnMes = new Date(añoActual, mes, 0).getDate();
+            selectDiaPago.innerHTML = "<option value='' disabled selected>Selecciona el día</option>";
+            for (let d = 1; d <= diasEnMes; d++) {
+                const option = document.createElement("option");
+                option.value = d;
+                option.textContent = d;
+                selectDiaPago.appendChild(option);
+            }
+        });
+    }
+
+    function obtenerSegurosSeleccionados() {
+        return {
+            cesantia: document.getElementById("seguroCesantia").checked,
+            desgravamen: document.getElementById("seguroDesgravamen").checked
+        };
+    }
+
+    const pasos = document.querySelectorAll(".paso");
+    const botonesContinuar = document.querySelectorAll(".btn.continuar");
+    const botonesVolver = document.querySelectorAll(".btn.volver");
+
+    let pasoActual = 0;
+
+    pasos.forEach((paso, i) => {
+        paso.setAttribute('data-step', i + 1);
     });
 
-    // ---------- PASO 2 ----------
-    document.getElementById('back2').addEventListener('click', () => showStep(1));
-    document.getElementById('next2').addEventListener('click', () => {
-        let valid = true;
+    const mostrarPaso = (index) => {
+        pasos.forEach((paso, i) => {
+            if (i === index) {
+                paso.classList.add("activo");
+                paso.classList.remove("inactivo");
+            } else {
+                paso.classList.add("inactivo");
+                paso.classList.remove("activo");
+            }
+        });
+    };
 
-        const rut = document.getElementById('rut').value;
-        const nombre = document.getElementById('nombre').value;
-        const correo = document.getElementById('correo').value;
-        const telefono = document.getElementById('telefono').value;
-        const region = document.getElementById('region').value;
-        const comuna = document.getElementById('comuna').value;
+    // ---------------------------------------------------------
+    // VALIDACIONES POR CADA PASO
+    // ---------------------------------------------------------
+    const validarPaso = (index) => {
+        let valido = true;
 
-        document.getElementById('errorRut').textContent = '';
-        document.getElementById('errorNombre').textContent = '';
-        document.getElementById('errorCorreo').textContent = '';
-        document.getElementById('errorTelefono').textContent = '';
-        document.getElementById('errorRegion').textContent = '';
-        document.getElementById('errorComuna').textContent = '';
+        // Limpiamos errores previos
+        pasos[index].querySelectorAll(".error").forEach(e => e.remove());
 
-        if (!rut) { document.getElementById('errorRut').textContent = 'El campo es obligatorio'; valid = false; }
-        if (!nombre) { document.getElementById('errorNombre').textContent = 'El campo es obligatorio'; valid = false; }
-        if (!correo) { document.getElementById('errorCorreo').textContent = 'El campo es obligatorio'; valid = false; }
-        if (!telefono || telefono.length <= 6) { document.getElementById('errorTelefono').textContent = 'El campo es obligatorio'; valid = false; }
-        if (!region) { document.getElementById('errorRegion').textContent = 'El campo es obligatorio'; valid = false; }
-        if (!comuna) { document.getElementById('errorComuna').textContent = 'El campo es obligatorio'; valid = false; }
-
-        if (!valid) return;
-        showStep(3);
-    });
-
-    // ---------- PASO 3 ----------
-    document.getElementById('back3').addEventListener('click', () => showStep(2));
-    document.getElementById('next3').addEventListener('click', () => {
-        let valid = true;
-        const monto = document.getElementById('monto').value;
-        const cuotas = document.getElementById('cuotas').value;
-        const mesPago = document.getElementById('mesPago').value;
-        const diaPago = document.getElementById('diaPago').value;
-
-        document.getElementById('errorMonto').textContent = '';
-        document.getElementById('errorCuotas').textContent = '';
-        document.getElementById('errorMesPago').textContent = '';
-        document.getElementById('errorDiaPago').textContent = '';
-
-        if (!monto) { document.getElementById('errorMonto').textContent = 'El campo es obligatorio'; valid = false; }
-        if (!cuotas) { document.getElementById('errorCuotas').textContent = 'El campo es obligatorio'; valid = false; }
-        if (!mesPago) { document.getElementById('errorMesPago').textContent = 'El campo es obligatorio'; valid = false; }
-        if (!diaPago) { document.getElementById('errorDiaPago').textContent = 'El campo es obligatorio'; valid = false; }
-        if (!valid) return;
-
-        const interes = 0.05;
-        const total = monto * (1 + interes);
-        const valorCuota = total / cuotas;
-
-        const resumen = document.getElementById('resumen');
-        resumen.innerHTML = `
-            <strong>Tipo:</strong> ${document.getElementById('tipo').value}<br>
-            <strong>Monto solicitado:</strong> $${monto}<br>
-            <strong>Número de cuotas:</strong> ${cuotas}<br>
-            <strong>Total a pagar:</strong> $${total.toFixed(0)}<br>
-            <strong>Valor por cuota:</strong> $${valorCuota.toFixed(0)}<br>
-            <strong>Primer pago:</strong> ${diaPago} de ${mesPago}
-        `;
-
-        showStep(4);
-    });
-
-    document.getElementById('back4').addEventListener('click', () => showStep(3));
-
-    // ---------- RUT automático ----------
-    const rutInput = document.getElementById('rut');
-    rutInput.addEventListener('input', () => {
-        let valor = rutInput.value.replace(/[^0-9kK]/g, '');
-        let cuerpo = valor.slice(0, -1);
-        let dv = valor.slice(-1);
-        cuerpo = cuerpo.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-        rutInput.value = cuerpo ? `${cuerpo}-${dv.toUpperCase()}` : dv.toUpperCase();
-    });
-
-    // ---------- Teléfono +56 9 ----------
-    const telInput = document.getElementById('telefono');
-    telInput.addEventListener('input', () => {
-        const prefix = '+56 9 ';
-        if (!telInput.value.startsWith(prefix)) {
-            telInput.value = prefix + telInput.value.replace(prefix, '');
+        if (index === 0) {
+            // Paso 1: Tipo de crédito
+            const tipo = document.getElementById("tipo-credito");
+            if (!tipo.value) {
+                mostrarError(tipo, "Debes seleccionar un tipo de crédito");
+                valido = false;
+            }
         }
-        if (document.activeElement === telInput) {
-            telInput.setSelectionRange(telInput.value.length, telInput.value.length);
+
+        if (index === 1) {
+            // Paso 2: RUT + Renta
+            const rut = pasos[index].querySelector("input[type='text']");
+            const renta = document.getElementById("renta");
+
+            if (!rut.value.trim()) {
+                mostrarError(rut, "Ingresa un RUT válido");
+                valido = false;
+            }
+
+            if (!renta.value) {
+                mostrarError(renta, "Selecciona tu renta mensual");
+                valido = false;
+            }
         }
-    });
 
-    // ---------- Regiones y comunas ----------
-    const regiones = [
-        { nombre: 'Metropolitana', comunas: ['Santiago', 'Providencia', 'Las Condes'] },
-        { nombre: 'Valparaíso', comunas: ['Valparaíso', 'Viña del Mar', 'Quilpué'] }
-    ];
+        if (index === 2) {
+            // Paso 3: Monto
+            const monto = pasos[index].querySelector("input[type='text']");
 
-    const regionSelect = document.getElementById('region');
-    const comunaSelect = document.getElementById('comuna');
+            let raw = monto.value.replace(/[^\d]/g, "");
+            let montoNum = parseInt(raw);
+            if (isNaN(montoNum)) {
+                mostrarError(monto, "Ingresa un monto válido");
+                valido = false;
+            } else if (montoNum < 1000000 || montoNum > 60000000) {
+                mostrarError(monto, "El monto debe estar entre $1.000.000 y $60.000.000");
+                valido = false;
+            }
+        }
 
-    regiones.forEach(r => {
-        const opt = document.createElement('option');
-        opt.value = r.nombre;
-        opt.textContent = r.nombre;
-        regionSelect.appendChild(opt);
-    });
+        if (index === 3) {
+            // Paso 4: cuotas, mes y día
+            const cuotas = pasos[index].querySelector("input[type='text']");
+            const mes = document.getElementById("mes-pago");
+            const dia = document.getElementById("dia-pago");
 
-    regionSelect.addEventListener('change', () => {
-        const r = regiones.find(x => x.nombre === regionSelect.value);
-        comunaSelect.innerHTML = '<option value="" disabled selected>Selecciona comuna</option>';
-        r.comunas.forEach(c => {
-            const opt = document.createElement('option');
-            opt.value = c;
-            opt.textContent = c;
-            comunaSelect.appendChild(opt);
+            let numCuotas = parseInt(cuotas.value);
+            if (isNaN(numCuotas)) {
+                mostrarError(cuotas, "Ingresa un número válido de cuotas");
+                valido = false;
+            } else if (numCuotas < 1 || numCuotas > 60) {
+                mostrarError(cuotas, "Las cuotas deben estar entre 1 y 60");
+                valido = false;
+            }
+
+            if (!mes.value) {
+                mostrarError(mes, "Selecciona el mes de pago");
+                valido = false;
+            }
+
+            if (!dia.value) {
+                mostrarError(dia, "Selecciona un día de pago");
+                valido = false;
+            }
+        }
+
+        return valido;
+    };
+
+    // Función para agregar mensaje debajo del campo
+    const mostrarError = (input, mensaje) => {
+        const p = document.createElement("p");
+        p.classList.add("error");
+        p.textContent = mensaje;
+
+        input.insertAdjacentElement("afterend", p);
+    };
+
+    // ---------------------------------------------------------
+    // EVENTOS DE NAVEGACIÓN
+    // ---------------------------------------------------------
+    botonesContinuar.forEach((btn, index) => {
+        btn.addEventListener("click", () => {
+            if (validarPaso(pasoActual)) {
+                if (pasoActual < pasos.length - 1) {
+                    pasoActual++;
+                    mostrarPaso(pasoActual);
+                }
+            }
         });
     });
 
-    // ---------- Número de cuotas ----------
-    const cuotasSelect = document.getElementById('cuotas');
-    for (let i = 1; i <= 60; i++) {
-        const opt = document.createElement('option');
-        opt.value = i;
-        opt.textContent = i;
-        cuotasSelect.appendChild(opt);
-    }
+    botonesVolver.forEach((btn) => {
+        btn.addEventListener("click", () => {
+            if (pasoActual > 0) {
+                pasoActual--;
+                mostrarPaso(pasoActual);
+            }
+        });
+    });
 
-    // ---------- Mes y día ----------
-    const mesSelect = document.getElementById('mesPago');
-    const diaSelect = document.getElementById('diaPago');
-    const hoy = new Date();
+    mostrarPaso(pasoActual);
 
-    // Agregar opción inicial   
-    mesSelect.innerHTML = '<option value="" disabled selected>Selecciona mes</option>';
-    diaSelect.innerHTML = '<option value="" disabled selected>Selecciona día</option>';
 
-    // Cargar 3 meses siguientes (incluyendo el actual)
-    for (let i = 0; i < 3; i++) {
-        let m = hoy.getMonth() + 1 + i;
-        let año = hoy.getFullYear();
-        if (m > 12) {
-            m -= 12;
-            año++;
-        }
+    document.querySelector(".ver-simulacion").addEventListener("click", () => {
+        const data = {
+            tipoCredito: document.getElementById("tipo-credito").value,
+            rut: document.getElementById("rut").value,
+            renta: document.getElementById("renta").value,
+            monto: parseInt(document.getElementById("monto").value.replace(/\D/g, "")),
+            cuotas: parseInt(document.querySelector("#paso4 input[type='text']").value),
+            mesInicio: document.getElementById("mes-pago").value,
+            diaPago: document.getElementById("dia-pago").value,
+            seguroCesantia: document.getElementById("seguroCesantia").checked,
+            seguroDesgravamen: document.getElementById("seguroDesgravamen").checked
+        };
 
-        const nombreMes = new Date(año, m - 1).toLocaleString('es-ES', { month: 'long' });
-        const opt = document.createElement('option');
-        opt.value = m;
-        opt.textContent = nombreMes.charAt(0).toUpperCase() + nombreMes.slice(1);
-        mesSelect.appendChild(opt);
-    }
-
-    // Al cambiar el mes, cargar los días correspondientes
-    mesSelect.addEventListener('change', () => {
-        const mes = parseInt(mesSelect.value);
-        const año = hoy.getFullYear();
-
-        if (!mes) return; // si aún no se ha seleccionado mes
-
-        let dias = 30;
-        if ([1, 3, 5, 7, 8, 10, 12].includes(mes)) dias = 31;
-        else if (mes === 2) dias = (año % 4 === 0 && (año % 100 !== 0 || año % 400 === 0)) ? 29 : 28;
-
-        diaSelect.innerHTML = '<option value="" disabled selected>Selecciona día</option>';
-        for (let d = 1; d <= dias; d++) {
-            const opt = document.createElement('option');
-            opt.value = d;
-            opt.textContent = d;
-            diaSelect.appendChild(opt);
-        }
+        enviarSimulacion(data);
     });
 });
+
+async function enviarSimulacion(data) {
+    try {
+        const response = await fetch("http://localhost:8080/simulacion", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(data)
+        });
+
+        const result = await response.json();
+
+        console.log("Respuesta del servidor:", result);
+
+        if (!response.ok) {
+            alert("Ocurrió un error en el servidor: " + (result.error || "Error desconocido"));
+            return;
+        }
+
+        alert("Simulación enviada correctamente.");
+    } catch (error) {
+        console.error("Error al enviar la simulación:", error);
+        alert("Error al enviar la simulación.");
+    }
+}
 
 
 /*
-const steps = document.querySelectorAll('.step');
+document.addEventListener("DOMContentLoaded", () => {
+    // 1) Seleccionar todos los elementos con clase ".paso"
+    const pasos = document.querySelectorAll(".paso");
 
-function showStep(num) {
-    steps.forEach((s, i) => {
-        s.classList.toggle('active', i == num - 1);
+    // 2) Seleccionar todos los botones de la clase "btn continuar"
+    const botonesContinuar = document.querySelectorAll(".btn.continuar");
+
+    // 3) Seleccionar todos los botones de la clase "btn volver"
+    const botonesVolver = document.querySelectorAll(".btn.volver");
+
+    // 4) Varieble que guarda el índice del paso actualmente visible
+    let pasoActual = 0;
+
+    pasos.forEach((paso, i) => {
+        paso.setAttribute('data-step', i + 1);
     });
-}
 
-// ---------- PASO 1 ----------
-document.getElementById('next1').addEventListener('click' , () => {
-    const tipo = document.getElementById('tipo').value;
-    const error = document.getElementById('errorTipo');
+    // 5) Función que muestra el paso del índice que recibe y oculta los demás
+    const mostrarPaso = (index) => {
+        pasos.forEach((paso, i) => {
+            if (i == index) {
+                paso.classList.add("activo");
+                paso.classList.remove("inactivo");
+            } else {
+                paso.classList.add("inactivo");
+                paso.classList.remove("activo");
+            }
+        });
+    };
 
-    if(!tipo) {
-        error.textContent='Debes seleccionar un tipo de crédito';
-        return;
-    }
-
-    error.textContent='';
-    showStep(2);
-});
-
-// ---------- PASO 2 ----------
-document.getElementById('back2').addEventListener('click', () => showStep(1));
-
-document.getElementById('next2').addEventListener('click', () => {
-    let valid = true;
-
-    const rut = document.getElementById('rut').value;
-    const nombre = document.getElementById('nombre').value;
-    const correo = document.getElementById('correo').value;
-    const telefono = document.getElementById('telefono').value;
-    const region = document.getElementById('region').value;
-    const comuna = document.getElementById('comuna').value;
-
-    document.getElementById('errorRut').textContent='';
-    document.getElementById('errorNombre').textContent='';
-    document.getElementById('errorCorreo').textContent='';
-    document.getElementById('errorTelefono').textContent='';
-    document.getElementById('errorRegion').textContent='';
-    document.getElementById('errorComuna').textContent='';
-
-    if(!rut){document.getElementById('errorRut').textContent='El campo es obligatorio'; valid=false;}
-    if(!nombre){document.getElementById('errorNombre').textContent='El campo es obligatorio'; valid=false;}
-    if(!correo){document.getElementById('errorCorreo').textContent='El campo es obligatorio'; valid=false;}
-    if(!telefono || telefono.length<=6){document.getElementById('errorTelefono').textContent='El campo es obligatorio'; valid=false;}
-    if(!region){document.getElementById('errorRegion').textContent='El campo es obligatorio'; valid=false;}
-    if(!comuna){document.getElementById('errorComuna').textContent='El campo es obligatorio'; valid=false;}
-
-    if(!valid) return;
-
-    showStep(3);
-});
-
-// ---------- PASO 3 ----------
-document.getElementById('back3').addEventListener('click', () => showStep(2));
-
-document.getElementById('next3').addEventListener('click', () => {
-    let valid=true;
-    const monto = document.getElementById('monto').value;
-    const cuotas = document.getElementById('cuotas').value;
-    const mesPago = document.getElementById('mesPago').value;
-    const diaPago = document.getElementById('diaPago').value;
-
-    document.getElementById('errorMonto').textContent='';
-    document.getElementById('errorCuotas').textContent='';
-    document.getElementById('errorMesPago').textContent='';
-    document.getElementById('errorDiaPago').textContent='';
-
-    if(!monto){document.getElementById('errorMonto').textContent='El campo es obligatorio'; valid=false;}
-    if(!cuotas){document.getElementById('errorCuotas').textContent='El campo es obligatorio'; valid=false;}
-    if(!mesPago){document.getElementById('errorMesPago').textContent='El campo es obligatorio'; valid=false;}
-    if(!diaPago){document.getElementById('errorDiaPago').textContent='El campo es obligatorio'; valid=false;}
-    if(!valid) return;
-
-    const interes=0.05;
-    const total = monto*(1+interes);
-    const valorCuota = total/cuotas;
-
-    const resumen=document.getElementById('resumen');
-    resumen.innerHTML=`
-        <strong>Tipo:</strong> ${document.getElementById('tipo').value}<br>
-        <strong>Monto solicitado:</strong> $${monto}<br>
-        <strong>Número de cuotas:</strong> ${cuotas}<br>
-        <strong>Total a pagar:</strong> $${total.toFixed(0)}<br>
-        <strong>Valor por cuota:</strong> $${valorCuota.toFixed(0)}<br>
-        <strong>Primer pago:</strong> ${diaPago} de ${mesPago}
-    `;
-
-    showStep(4);
-});
-
-document.getElementById('back4').addEventListener('click', () => showStep(3));
-
-// ---------- RUT automático ----------
-const rutInput=document.getElementById('rut');
-rutInput.addEventListener('input',()=>{
-    let valor = rutInput.value.replace(/[^0-9kK]/g,'');
-    let cuerpo = valor.slice(0,-1);
-    let dv = valor.slice(-1);
-    cuerpo = cuerpo.replace(/\B(?=(\d{3})+(?!\d))/g,'.');
-    rutInput.value = cuerpo ? `${cuerpo}-${dv.toUpperCase()}` : dv.toUpperCase();
-});
-
-// ---------- Teléfono +56 9 ----------
-const telInput=document.getElementById('telefono');
-telInput.addEventListener('input', () => {
-    const prefix = '+56 9 ';
-    if (!telInput.value.startsWith(prefix)) {
-        telInput.value = prefix + telInput.value.replace(prefix, '');
-    }
-    if (document.activeElement === telInput) {
-        telInput.setSelectionRange(telInput.value.length, telInput.value.length);
-    }
-});
-
-// ---------- Inicializar listas desplegables ----------
-
-// Número de cuotas
-const cuotasSelect=document.getElementById('cuotas');
-for(let i=1;i<=60;i++){
-    const opt=document.createElement('option');
-    opt.value=i;
-    opt.textContent=i;
-    cuotasSelect.appendChild(opt);
-}
-
-// Mes y día de primer pago
-const mesSelect=document.getElementById('mesPago');
-const diaSelect=document.getElementById('diaPago');
-
-const hoy=new Date();
-for(let i=0;i<3;i++){ // 3 meses máximo
-    let m=(hoy.getMonth()+1+i);
-    if(m>12)m-=12;
-    const opt=document.createElement('option');
-    opt.value=m;
-    opt.textContent=`${m}`;
-    mesSelect.appendChild(opt);
-}
-
-// Día se ajusta según mes
-mesSelect.addEventListener('change',()=>{
-    const mes=parseInt(mesSelect.value);
-    const año=hoy.getFullYear();
-    let dias=30;
-    if([1,3,5,7,8,10,12].includes(mes)) dias=31;
-    else if(mes===2) dias=(año%4===0 && (año%100!==0 || año%400===0))?29:28;
-    diaSelect.innerHTML='';
-    for(let d=1;d<=dias;d++){
-        const opt=document.createElement('option');
-        opt.value=d;
-        opt.textContent=d;
-        diaSelect.appendChild(opt);
-    }
-});
-
-// ---------- Regiones y comunas (simplificado) ----------
-const regiones=[
-    {nombre:'Metropolitana', comunas:['Santiago','Providencia','Las Condes']},
-    {nombre:'Valparaíso', comunas:['Valparaíso','Viña del Mar','Quilpué']}
-];
-const regionSelect=document.getElementById('region');
-const comunaSelect=document.getElementById('comuna');
-
-regiones.forEach(r=>{
-    const opt=document.createElement('option');
-    opt.value=r.nombre;
-    opt.textContent=r.nombre;
-    regionSelect.appendChild(opt);
-});
-
-regionSelect.addEventListener('change',()=>{
-    const r=regiones.find(x=>x.nombre===regionSelect.value);
-    comunaSelect.innerHTML='<option value="" disabled selected>Selecciona comuna</option>';
-    r.comunas.forEach(c=>{
-        const opt=document.createElement('option');
-        opt.value=c;
-        opt.textContent=c;
-        comunaSelect.appendChild(opt);
+    // 6) Añade el evento click a cada botón "CONTINUAR"
+    botonesContinuar.forEach((btn) => {
+        btn.addEventListener("click", () => {
+            // 6.1) Si no estamos en el último paso, avanzamos
+            if (pasoActual < pasos.length - 1) {
+                pasoActual++;
+                mostrarPaso(pasoActual);
+            }
+        });
     });
+
+    // 7) Añade el evento click a cada botón "VOLVER"
+    botonesVolver.forEach((btn) => {
+        btn.addEventListener("click", () => {
+            // 7.1) Si no estamos en el primer paso, retrocedemos
+            if (pasoActual > 0) {
+                pasoActual--;
+                mostrarPaso(pasoActual);   
+            }
+        });
+    });
+
+    // 8) Al cargar, mostramos el primer paso
+    mostrarPaso(pasoActual);
 });
 */

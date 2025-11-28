@@ -1,55 +1,93 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="es">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Inicio</title>
-    <link rel="stylesheet" href="css/style.css" />
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClaroFin - Tu crédito en línea</title>
+    <link rel="stylesheet" href="css/styles.css">
     <script defer src="js/navbar.js"></script>
     <script defer src="js/main.js"></script>
-  </head>
+</head>
 
-  <body>
-
+<body>
+    <!-- Navbar -->
     <header class="navbar">
-      <div class="brand">Logo</div>
+        <div class="nav-container">
+            <a href="index.html" class="brand">
+                <img src="assets/logo.png" alt="Logo ClaroFin" class="logo">
+            </a>
 
-      <button class="burger" aria-label="Abrir menú" aria-expanded="false">☰</button>
+            <nav class="nav-links" id="navLinks" data-open="false">
+                <a href="#seguros">SEGUROS</a>
+                <a href="#creditos">CRÉDITOS</a>
+                <a href="#contacto">CONTACTO</a>
+            </nav>
 
-      <nav class="nav-links" data-open="false">
-        <a href="#" data-page="inicio">Inicio</a>
-        <a href="#" data-page="tramites">Trámites</a>
-        <a href="#" data-page="validaciones">Validaciones</a>
-        <a href="#" data-page="estado">Estado</a>
-        <a href="#" data-page="contacto">Contacto</a>
-      </nav>
+            <button class="burger" aria-label="Abrir menú" aria-expanded="false">☰</button>
+            <a href="acceso.html" class="acceso" id="accesoBtn">ACCESO</a>
+
+            <div class="profile" id="profileMenu">
+                <img src="assets/profile.jpg" alt="Perfil" id="profileBtn" class="profile-icon">
+                <div class="dropdown" id="dropdownMenu">
+                    <button id="logoutBtn">Cerrar sesión</button>
+                </div>
+            </div>
+        </div>
     </header>
 
-    <main class="container" id="content">
-      <section>
-        <h1>Bienvenido/a</h1>
-        <h3>Esta es nuestra barra navegadora</h3>
+    <!-- Hero principal -->
+    <main>
+        <section class="hero">
+            <div class="hero-container">
+                <div class="hero-left">
+                    <ul class="checklist slide-down">
+                        <li>Simula tu crédito en menos de 5 minutos.</li>
+                        <li>Recibe tu dinero rápido, sin trámites innecesarios.</li>
+                        <li>ClaroFin, claridad que impulsa tu futuro.</li>
+                    </ul>
 
-        <p><button class="btn btn-primary" id="tipos">Tipos de créditos</button></p>
-        <p><button class="btn btn-secondary" id="historial">Tu historial crediticio</button></p>
-        <p><button class="btn btn-accent" id="simulacion">Simula tu Crédito</button></p>
-      </section>
+                    <hr class="divider slide-down">
+
+                    <div class="brand-row slide-down">
+                        <h1 class="brand-title">CLAROFIN</h1>
+                        <p class="brand-sub">Seguros, claros y<br>contigo en cada paso</p>
+                    </div>
+
+                    <div class="hero-cta slide-down">
+                        <button id="simulaBtn" class="btn-outline">SIMULA TU CRÉDITO</button>
+                        <button id="solicitaBtn" class="btn-primary">SOLICITA TU CRÉDITO</button>
+                    </div>
+                </div>
+
+                <div class="hero-right slide-left">
+                    <img src="assets/hero.png" alt="Persona usando laptop">
+                </div>
+            </div>
+        </section>
+
+        <!-- Pasos del proceso -->
+        <section class="steps">
+            <div class="steps-inner">
+                <div class="steps-flow">
+                    <span class="slogan">Todo 100% en línea,<br>rápido y transparente</span>
+                    
+                    <span class="highlight">
+                        <img src="assets/solicitud.png" alt="Icono pregunta" class="inline-icon">
+                        ¿Cómo<br>funciona?
+                    </span>
+
+                    <span class="arrow">›</span>
+                    <span>Simula tu crédito<br>en minutos</span>
+                    <span class="arrow">›</span>
+                    <span>Revisa la propuesta<br>y confirma</span>
+                    <span class="arrow">›</span>
+                    <span class="money">
+                        Recibe tu dinero<br>de inmediato
+                        <img src="assets/enviar.png" alt="dinero" class="inline-icon2">
+                    </span>
+                </div>
+            </div>
+        </section>
     </main>
-
-  </body>
+</body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
