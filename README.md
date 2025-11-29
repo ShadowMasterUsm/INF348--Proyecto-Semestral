@@ -20,15 +20,10 @@ Puede acceder a la wiki mediante el siguiente [enlace](https://gitlab.com/grupo-
 
 ## Aspectos técnicos relevantes
 
-- Se creó el Milestone **Hito 2** para organizar las entregas.  
-- Se incorporaron tres Historias de Usuario como Issues en el repositorio:  
-  - HU001: Simulación de crédito  
-  - HU002: Solicitud de crédito  
-  - HU003: Evaluación de riesgo  
-- Cada HU está asociada al Milestone **Hito 2** y etiquetada con el Label **En proceso**.  
-- Se configuró un tablero Kanban (**Issue Board - Hito 2**) con los estados de las HU.  
-- Se documentaron las Historias de Usuario en la Wiki con enlaces directos a cada Issue. 
-- Se añadieron los **Diagramas de Secuencia** de cada HU en la Wiki para representar gráficamente la interacción entre actores, interfaces y entidades del sistema.  
+- Se incorporo una nueva Historias de Usuario en el repositorio:  
+  - HU006: 
+- Avannzamos el codigo en lo posible.
+- Concluimos sobre nuestro proyecto en la wiki en la seccion de Resultados Finales.
 
 ## Para levantar el proyecto
 
