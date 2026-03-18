@@ -1,13 +1,13 @@
-# GRUPO 06
+# GRUPO 09
 
-Este es el repositorio del "Grupo 06", cuyos integrantes son:
+Este es el repositorio del "Grupo 09", cuyos integrantes son:
 
-* Montserrat Antunez - 202203018-6
+* Montserrat Antúnez - 202203018-6
 * Axel Tapia - 202373080-7
 * Maria-Belen Segura - 202203002-K
 * Luka Caric - 202373034-3
-* Georg Graesdal - 90005138-7
-* **Tutor**: Paula Castillo 
+* Martín Chacón - 202023012-9
+* **Tutor**: Moisés Villaroel
 
 ## Wiki
 
