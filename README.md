@@ -14,7 +14,7 @@ Este es el repositorio del "Grupo 09", cuyos integrantes son:
 Puede acceder a la wiki mediante el siguiente [enlace](https://gitlab.com/grupo-0006/GRUPO06-2025-PROYINF/-/wikis/home)
 
 ## Descipción del proyecto
-Se nos solicitó digitalizar el proceso de solicitud de créditos, en una empresa cuyo mayor obsáculo es la rapidez en la revisión de solictudes de créditos, ante una compentencia que tiene la capacidad logística de rechazar o aprobar a sus clientes en menos de 24 horas. 
+Se nos solicitó digitalizar el proceso de solicitud de créditos, en una empresa cuyo mayor obstáculo es la rapidez en la revisión de solictudes de créditos, ante una compentencia que tiene la capacidad logística de rechazar o aprobar a sus clientes en menos de 24 horas. 
 
 Luego, el nuevo punto de mejora es tener la capacidad de extraer los datos desde un documento subido digitalmente, con el objetivo de evaluar y verificar la información de forma semiautomática.
 
