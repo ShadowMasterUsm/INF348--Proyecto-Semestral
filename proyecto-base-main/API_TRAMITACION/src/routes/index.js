@@ -10,5 +10,7 @@ router.get('/', (req, res) => res.json({message: 'Probando... La prueba de API_T
 // Esto es un ejemplo para endpoints
 router.get('/createTable', index.createTable);
 router.post('/simulacion', index.crearSimulacion);
+router.get('/simulacion', index.obtenerSimulaciones);
+router.get('/simulacion/:id', index.obtenerSimulacionPorId);
 
 module.exports = router;

@@ -228,6 +228,7 @@ document.addEventListener("DOMContentLoaded", () => {
             renta: document.getElementById("renta").value,
             monto: parseInt(document.getElementById("monto").value.replace(/\D/g, "")),
             cuotas: parseInt(document.querySelector("#paso4 input[type='text']").value),
+            tasa_interes_anual: 12.5,
             mesInicio: document.getElementById("mes-pago").value,
             diaPago: document.getElementById("dia-pago").value,
             seguroCesantia: document.getElementById("seguroCesantia").checked,
