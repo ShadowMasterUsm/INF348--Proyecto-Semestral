@@ -8,15 +8,74 @@ document.addEventListener("DOMContentLoaded", () => {
             if (existingMsg) {
                 existingMsg.remove();
             }
+
             if (file) {
+                // Limpiar mensajes previos
+                document.querySelectorAll(".doc-msg").forEach(e => e.remove());
+
+                // Mensaje inicial
                 const p = document.createElement("p");
                 p.classList.add("doc-msg");
                 p.style.color = "#28a745";
                 p.style.fontSize = "0.9em";
                 p.style.marginTop = "5px";
-                p.textContent = `Archivo '${file.name}' seleccionado con éxito.`;
+                p.textContent = `Procesando documento '${file.name}'...`;
                 inputDocumento.insertAdjacentElement("afterend", p);
+
+                Tesseract.recognize(
+                    file,
+                    'spa',
+                    {
+                        logger: m => console.log(m)
+                    }
+                ).then(({ data: { text } }) => {
+
+                    console.log("Texto detectado:", text);
+
+                    // Buscar RUT
+                    const rutRegex = /\d{1,2}\.?\d{3}\.?\d{3}-?[0-9kK]/;
+                    const rutMatch = text.match(rutRegex);
+
+                    if (rutMatch) {
+                        let rutDetectado = rutMatch[0];
+
+                        // 🔹 Limpiar el RUT (quitar puntos y espacios)
+                        rutDetectado = rutDetectado.replace(/\./g, "").replace(/\s/g, "");
+
+                        // 🔹 Si viene sin guion, lo agregamos
+                        if (!rutDetectado.includes("-") && rutDetectado.length >= 8) {
+                            rutDetectado = rutDetectado.slice(0, -1) + "-" + rutDetectado.slice(-1);
+                        }
+
+                        const inputRut = document.getElementById("rut");
+                        inputRut.value = rutMatch[0];
+                        inputRut.dispatchEvent(new Event("input"));
+
+                        p.textContent = "RUT detectado automáticamente desde la imagen.";
+                        p.style.color = "#007bff";
+                    } else {
+                        p.textContent = "No se pudo detectar el RUT. Intenta con una imagen más clara.";
+                        p.style.color = "orange";
+                    }
+
+                }).catch(err => {
+                    console.error(err);
+                    p.textContent = "Error al procesar la imagen.";
+                    p.style.color = "red";
+                });
             }
+
+            //if (file) {
+            //    const p = document.createElement("p");
+            //    p.classList.add("doc-msg");
+            //    p.style.color = "#28a745";
+            //    p.style.fontSize = "0.9em";
+            //    p.style.marginTop = "5px";
+            //    p.textContent = `Archivo '${file.name}' seleccionado con éxito.`;
+            //    inputDocumento.insertAdjacentElement("afterend", p);
+            //}
+
+
         });
     }
 
