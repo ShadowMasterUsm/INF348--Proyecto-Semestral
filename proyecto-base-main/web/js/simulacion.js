@@ -11,7 +11,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (file) {
                 const p = document.createElement("p");
                 p.classList.add("doc-msg");
-                p.style.color = "#28a745"; 
+                p.style.color = "#28a745";
                 p.style.fontSize = "0.9em";
                 p.style.marginTop = "5px";
                 p.textContent = `Archivo '${file.name}' seleccionado con éxito.`;
@@ -70,7 +70,7 @@ document.addEventListener("DOMContentLoaded", () => {
         let mesActual = hoy.getMonth();
 
         selectMesPago.innerHTML = "<option value='' disabled selected>Selecciona el mes</option>";
-        
+
         for (let i = 1; i <= 3; i++) {
             let mesIndex = (mesActual + i) % 12;
             let mesNombre = meses[mesIndex];
@@ -187,7 +187,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (index === 3) {
             // Paso 4: cuotas, mes y día
-            const cuotas = pasos[index].querySelector("input[type='text']");
+            const cuotas = document.getElementById("cuotas");
             const mes = document.getElementById("mes-pago");
             const dia = document.getElementById("dia-pago");
 
@@ -256,7 +256,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // Si se subió un documento y ademas se dejó el RUT vacío, usamos uno artificial para que la API no falle
         if (tieneDocumento && !rutValue.trim()) {
-            rutValue = "11.111.111-1"; 
+            rutValue = "11.111.111-1";
         }
 
         const data = {
@@ -264,7 +264,7 @@ document.addEventListener("DOMContentLoaded", () => {
             rut: rutValue,
             renta: document.getElementById("renta").value || "C", // Valor por defecto si no lo llenó
             monto: parseInt(document.getElementById("monto").value.replace(/\D/g, "")),
-            cuotas: parseInt(document.querySelector("#paso4 input[type='text']").value),
+            cuotas: parseInt(document.getElementById("cuotas").value),
             tasa_interes_anual: 12.5,
             mesInicio: document.getElementById("mes-pago").value,
             diaPago: document.getElementById("dia-pago").value,
@@ -351,7 +351,7 @@ document.addEventListener("DOMContentLoaded", () => {
             // 7.1) Si no estamos en el primer paso, retrocedemos
             if (pasoActual > 0) {
                 pasoActual--;
-                mostrarPaso(pasoActual);   
+                mostrarPaso(pasoActual);
             }
         });
     });

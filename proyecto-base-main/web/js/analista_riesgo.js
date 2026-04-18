@@ -1,14 +1,11 @@
 document.addEventListener('DOMContentLoaded', () => {
   const tabs = document.querySelectorAll('.tab-button');
   const tabContents = document.querySelectorAll('.tab-content');
+  const API_SIMULACIONES = 'http://localhost:8080/simulacion';
 
   // datos estaticos, luego hay que reemplazar con llamadas a la API pero es para probar
   const mockData = {
-    evaluacion: [
-      { id: 1, cliente: 'Juan Perez', monto: 1000000, plazo: 24, score: 55 },
-      { id: 2, cliente: 'Maria Lopez', monto: 5000000, plazo: 12, score: 40 },
-      { id: 5, cliente: 'Pedro Rodriguez', monto: 30000000, plazo: 48, score: 95 },
-    ],
+    evaluacion: [],
     aprobadas: [
       { id: 3, cliente: 'Carlos Sanchez', monto: 15000000, plazo: 36 },
     ],
@@ -21,6 +18,37 @@ document.addEventListener('DOMContentLoaded', () => {
     if (score > 70) return 'score-high';
     if (score > 50) return 'score-medium';
     return 'score-low';
+  };
+
+  const calcularScore = (monto, cuotas) => {
+    const montoNum = Number(monto) || 0;
+    const cuotasNum = Number(cuotas) || 1;
+    const scoreBruto = 100 - Math.round((montoNum / 1000000) * 2 + cuotasNum * 0.8);
+    return Math.max(5, Math.min(95, scoreBruto));
+  };
+
+  const cargarSolicitudesEvaluacion = async () => {
+    try {
+      const response = await fetch(API_SIMULACIONES);
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const payload = await response.json();
+      const simulaciones = Array.isArray(payload.data) ? payload.data : [];
+
+      mockData.evaluacion = simulaciones.map((simulacion) => ({
+        id: simulacion.id_simulacion,
+        cliente: simulacion.rut,
+        monto: Number(simulacion.monto) || 0,
+        plazo: Number(simulacion.cuotas) || 0,
+        score: calcularScore(simulacion.monto, simulacion.cuotas)
+      }));
+    } catch (error) {
+      console.error('Error al cargar simulaciones para evaluación:', error);
+      mockData.evaluacion = [];
+    }
   };
 
   const renderSolicitudes = (tab) => {
@@ -69,7 +97,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   };
 
-  const handleTabClick = (tab) => {
+  const handleTabClick = async (tab) => {
     tabs.forEach(t => t.classList.remove('active'));
     document.querySelector(`[data-tab=${tab}]`).classList.add('active');
 
@@ -78,22 +106,27 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.getElementById(tab).classList.add('active');
+
+    if (tab === 'evaluacion') {
+      await cargarSolicitudesEvaluacion();
+    }
+
     renderSolicitudes(tab);
   };
 
   tabs.forEach(tab => {
-    tab.addEventListener('click', () => {
-      handleTabClick(tab.dataset.tab);
+    tab.addEventListener('click', async () => {
+      await handleTabClick(tab.dataset.tab);
     });
   });
 
   document.addEventListener('click', (e) => {
     if (e.target.matches('[data-action="aprobar"]') || e.target.matches('[data-action="rechazar"]')) {
       const id = e.target.dataset.id;
-      
+
       // Simulación: Eliminar la solicitud de la lista de evaluación
       mockData.evaluacion = mockData.evaluacion.filter(s => s.id !== parseInt(id));
-      
+
       // Volver a renderizar la pestaña actual para que se vea el cambio
       const activeTab = document.querySelector('.tab-button.active').dataset.tab;
       renderSolicitudes(activeTab);
