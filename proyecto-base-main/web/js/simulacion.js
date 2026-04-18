@@ -1,4 +1,25 @@
 document.addEventListener("DOMContentLoaded", () => {
+    const inputDocumento = document.getElementById("documento");
+
+    if (inputDocumento) {
+        inputDocumento.addEventListener("change", (event) => {
+            const file = event.target.files[0];
+            const existingMsg = inputDocumento.parentElement.querySelector(".doc-msg");
+            if (existingMsg) {
+                existingMsg.remove();
+            }
+            if (file) {
+                const p = document.createElement("p");
+                p.classList.add("doc-msg");
+                p.style.color = "#28a745"; 
+                p.style.fontSize = "0.9em";
+                p.style.marginTop = "5px";
+                p.textContent = `Archivo '${file.name}' seleccionado con éxito.`;
+                inputDocumento.insertAdjacentElement("afterend", p);
+            }
+        });
+    }
+
     const inputRut = document.querySelector("#rut");
 
     if (inputRut) {
@@ -130,15 +151,22 @@ document.addEventListener("DOMContentLoaded", () => {
             // Paso 2: RUT + Renta
             const rut = pasos[index].querySelector("input[type='text']");
             const renta = document.getElementById("renta");
+            const documento = document.getElementById("documento");
 
-            if (!rut.value.trim()) {
-                mostrarError(rut, "Ingresa un RUT válido");
-                valido = false;
-            }
+            // Comprobamos si el usuario subió un archivo
+            const tieneDocumento = documento && documento.files.length > 0;
 
-            if (!renta.value) {
-                mostrarError(renta, "Selecciona tu renta mensual");
-                valido = false;
+            // Solo exigimos RUT y Renta si NO subió un documento
+            if (!tieneDocumento) {
+                if (!rut.value.trim()) {
+                    mostrarError(rut, "Ingresa un RUT válido o sube tu documento");
+                    valido = false;
+                }
+
+                if (!renta.value) {
+                    mostrarError(renta, "Selecciona tu renta mensual o sube tu documento");
+                    valido = false;
+                }
             }
         }
 
@@ -222,10 +250,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     document.querySelector(".ver-simulacion").addEventListener("click", () => {
+        let rutValue = document.getElementById("rut").value;
+        const documento = document.getElementById("documento");
+        const tieneDocumento = documento && documento.files.length > 0;
+
+        // Si se subió un documento y ademas se dejó el RUT vacío, usamos uno artificial para que la API no falle
+        if (tieneDocumento && !rutValue.trim()) {
+            rutValue = "11.111.111-1"; 
+        }
+
         const data = {
             tipoCredito: document.getElementById("tipo-credito").value,
-            rut: document.getElementById("rut").value,
-            renta: document.getElementById("renta").value,
+            rut: rutValue,
+            renta: document.getElementById("renta").value || "C", // Valor por defecto si no lo llenó
             monto: parseInt(document.getElementById("monto").value.replace(/\D/g, "")),
             cuotas: parseInt(document.querySelector("#paso4 input[type='text']").value),
             tasa_interes_anual: 12.5,
