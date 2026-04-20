@@ -7,10 +7,26 @@ document.addEventListener('DOMContentLoaded', () => {
   const mockData = {
     evaluacion: [],
     aprobadas: [
-      { id: 3, cliente: 'Carlos Sanchez', monto: 15000000, plazo: 36 },
+      {
+        id: 3,
+        cliente: 'Carlos Sanchez',
+        monto: 15000000,
+        plazo: 36,
+        tasaInteres: 12.5,
+        incluye_seguro_desgravamen: true,
+        incluye_seguro_cesantia: false,
+      },
     ],
     'sin-firmar': [
-      { id: 4, cliente: 'Ana Gomez', monto: 2000000, plazo: 6 },
+      {
+        id: 4,
+        cliente: 'Ana Gomez',
+        monto: 2000000,
+        plazo: 6,
+        tasaInteres: 12.5,
+        incluye_seguro_desgravamen: false,
+        incluye_seguro_cesantia: true,
+      },
     ],
   };
 
@@ -27,6 +43,41 @@ document.addEventListener('DOMContentLoaded', () => {
     return Math.max(5, Math.min(95, scoreBruto));
   };
 
+  const formatearMoneda = (valor) => `$${Number(valor || 0).toLocaleString('es-CL')}`;
+
+  const formatearTasa = (valor) => `${Number(valor || 0).toFixed(1)}%`;
+
+  const calcularCuotaMensualEstimada = (monto, plazo, tasaInteresAnual) => {
+    const principal = Number(monto) || 0;
+    const meses = Number(plazo) || 0;
+    const tasaAnual = Number(tasaInteresAnual) || 0;
+
+    if (meses <= 0) return 0;
+
+    const tasaMensual = tasaAnual / 12 / 100;
+    if (tasaMensual <= 0) {
+      return principal / meses;
+    }
+
+    return (principal * tasaMensual) / (1 - Math.pow(1 + tasaMensual, -meses));
+  };
+
+  const obtenerConllevaSolicitud = (solicitud) => {
+    const seguros = [];
+
+    if (solicitud.incluye_seguro_desgravamen) {
+      seguros.push('desgravamen');
+    }
+
+    if (solicitud.incluye_seguro_cesantia) {
+      seguros.push('cesantía');
+    }
+
+    const detalleSeguros = seguros.length > 0 ? `, seguros ${seguros.join(' y ')}` : '';
+
+    return `Monto ${formatearMoneda(solicitud.monto)}, plazo ${Number(solicitud.plazo) || 0} meses, tasa ${formatearTasa(solicitud.tasaInteres)}${detalleSeguros}`;
+  };
+
   const cargarSolicitudesEvaluacion = async () => {
     try {
       const response = await fetch(API_SIMULACIONES);
@@ -38,13 +89,25 @@ document.addEventListener('DOMContentLoaded', () => {
       const payload = await response.json();
       const simulaciones = Array.isArray(payload.data) ? payload.data : [];
 
-      mockData.evaluacion = simulaciones.map((simulacion) => ({
-        id: simulacion.id_simulacion,
-        cliente: simulacion.rut,
-        monto: Number(simulacion.monto) || 0,
-        plazo: Number(simulacion.cuotas) || 0,
-        score: calcularScore(simulacion.monto, simulacion.cuotas)
-      }));
+      mockData.evaluacion = simulaciones.map((simulacion) => {
+        const monto = Number(simulacion.monto) || 0;
+        const plazo = Number(simulacion.cuotas) || 0;
+        const tasaInteres = Number(simulacion.tasa_interes_anual) || 12.5;
+        const cuotaCalculada = calcularCuotaMensualEstimada(monto, plazo, tasaInteres);
+
+        return {
+          id: simulacion.id_simulacion,
+          cliente: simulacion.rut,
+          monto,
+          plazo,
+          tasaInteres,
+          cuotaMensual: Number(simulacion.monto_cuota) || cuotaCalculada,
+          totalPagar: Number(simulacion.monto_total) || cuotaCalculada * plazo,
+          incluye_seguro_desgravamen: Boolean(simulacion.incluye_seguro_desgravamen),
+          incluye_seguro_cesantia: Boolean(simulacion.incluye_seguro_cesantia),
+          score: calcularScore(simulacion.monto, simulacion.cuotas)
+        };
+      });
     } catch (error) {
       console.error('Error al cargar simulaciones para evaluación:', error);
       mockData.evaluacion = [];
@@ -61,40 +124,65 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    solicitudes.forEach(solicitud => {
-      const solicitudDiv = document.createElement('div');
-      solicitudDiv.classList.add('solicitud');
+    const tabla = document.createElement('table');
+    tabla.className = 'solicitudes-table';
 
-      let buttons = '';
-      let scoreBadge = '';
-      if (tab === 'evaluacion') {
-        buttons = `
+    const thead = document.createElement('thead');
+    thead.innerHTML = `
+      <tr>
+        <th>Cliente</th>
+        <th>Monto</th>
+        <th>Plazo</th>
+        <th>Tasa anual</th>
+        <th>Cuota mensual</th>
+        <th>Total a pagar</th>
+        <th>Qué conlleva</th>
+        <th>Puntaje</th>
+        <th>Acciones</th>
+      </tr>
+    `;
+
+    const tbody = document.createElement('tbody');
+
+    solicitudes.forEach((solicitud) => {
+      const fila = document.createElement('tr');
+
+      const botones = tab === 'evaluacion'
+        ? `
           <div class="actions">
             <button class="btn btn-primary" data-id="${solicitud.id}" data-action="aprobar">Aprobar</button>
             <button class="btn btn-secondary" data-id="${solicitud.id}" data-action="rechazar">Rechazar</button>
           </div>
-        `;
-        scoreBadge = `
-          <div class="score">
-            <strong>Puntaje de Riesgo</strong>
-            <div class="score-badge ${getScoreClass(solicitud.score)}">${solicitud.score}</div>
-          </div>
-        `;
-      }
+        `
+        : '<span class="table-muted">Sin acciones</span>';
 
-      solicitudDiv.innerHTML = `
-        <div class="solicitud-info">
-          <p><strong>Cliente:</strong> ${solicitud.cliente}</p>
-          <p><strong>Monto:</strong> $${solicitud.monto.toLocaleString('es-CL')}</p>
-          <p><strong>Plazo:</strong> ${solicitud.plazo} meses</p>
-        </div>
-        <div class="solicitud-details">
-          ${scoreBadge}
-          ${buttons}
-        </div>
+      const puntaje = tab === 'evaluacion'
+        ? `<div class="score-badge ${getScoreClass(solicitud.score)}">${solicitud.score}</div>`
+        : '<span class="table-muted">-</span>';
+
+      const cuotaMensual = Number(solicitud.cuotaMensual)
+        || calcularCuotaMensualEstimada(solicitud.monto, solicitud.plazo, solicitud.tasaInteres);
+      const totalPagar = Number(solicitud.totalPagar) || (cuotaMensual * (Number(solicitud.plazo) || 0));
+      const tasaMensual = (Number(solicitud.tasaInteres) || 0) / 12;
+
+      fila.innerHTML = `
+        <td data-label="Cliente">${solicitud.cliente}</td>
+        <td data-label="Monto">${formatearMoneda(solicitud.monto)}</td>
+        <td data-label="Plazo">${Number(solicitud.plazo) || 0} meses</td>
+        <td data-label="Tasa anual">${formatearTasa(solicitud.tasaInteres)} <span class="table-muted">(${formatearTasa(tasaMensual)} mensual aprox.)</span></td>
+        <td data-label="Cuota mensual">${formatearMoneda(cuotaMensual)}</td>
+        <td data-label="Total a pagar">${formatearMoneda(totalPagar)}</td>
+        <td data-label="Qué conlleva">${obtenerConllevaSolicitud(solicitud)}</td>
+        <td data-label="Puntaje">${puntaje}</td>
+        <td data-label="Acciones">${botones}</td>
       `;
-      content.appendChild(solicitudDiv);
+
+      tbody.appendChild(fila);
     });
+
+    tabla.appendChild(thead);
+    tabla.appendChild(tbody);
+    content.appendChild(tabla);
   };
 
   const handleTabClick = async (tab) => {
