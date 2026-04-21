@@ -3,31 +3,33 @@ document.addEventListener('DOMContentLoaded', () => {
   const tabContents = document.querySelectorAll('.tab-content');
   const API_SIMULACIONES = 'http://localhost:8080/simulacion';
 
+  // ─── Persistencia ─────────────────────────────────────────────────────────────
+  const STORAGE_KEY = 'analista_riesgo_estado';
+
+  const cargarEstadoGuardado = () => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch { return null; }
+  };
+
+  const guardarEstado = () => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        'sin-firmar': mockData['sin-firmar'],
+        procesados: mockData['sin-firmar'].map(s => s.id),
+      }));
+    } catch (e) { console.warn('No se pudo guardar el estado:', e); }
+  };
+
+  const estadoGuardado = cargarEstadoGuardado();
+  const idsYaProcesados = new Set((estadoGuardado?.procesados ?? []).map(String));
+
   // datos estaticos, luego hay que reemplazar con llamadas a la API pero es para probar
   const mockData = {
     evaluacion: [],
-    aprobadas: [
-      {
-        id: 3,
-        cliente: 'Carlos Sanchez',
-        monto: 15000000,
-        plazo: 36,
-        tasaInteres: 12.5,
-        incluye_seguro_desgravamen: true,
-        incluye_seguro_cesantia: false,
-      },
-    ],
-    'sin-firmar': [
-      {
-        id: 4,
-        cliente: 'Ana Gomez',
-        monto: 2000000,
-        plazo: 6,
-        tasaInteres: 12.5,
-        incluye_seguro_desgravamen: false,
-        incluye_seguro_cesantia: true,
-      },
-    ],
+    aprobadas: [],
+    'sin-firmar': estadoGuardado?.['sin-firmar'] ?? [],
   };
 
   const getScoreClass = (score) => {
@@ -89,25 +91,27 @@ document.addEventListener('DOMContentLoaded', () => {
       const payload = await response.json();
       const simulaciones = Array.isArray(payload.data) ? payload.data : [];
 
-      mockData.evaluacion = simulaciones.map((simulacion) => {
-        const monto = Number(simulacion.monto) || 0;
-        const plazo = Number(simulacion.cuotas) || 0;
-        const tasaInteres = Number(simulacion.tasa_interes_anual) || 12.5;
-        const cuotaCalculada = calcularCuotaMensualEstimada(monto, plazo, tasaInteres);
+      mockData.evaluacion = simulaciones
+        .filter((simulacion) => !idsYaProcesados.has(String(simulacion.id_simulacion)))
+        .map((simulacion) => {
+          const monto = Number(simulacion.monto) || 0;
+          const plazo = Number(simulacion.cuotas) || 0;
+          const tasaInteres = Number(simulacion.tasa_interes_anual) || 12.5;
+          const cuotaCalculada = calcularCuotaMensualEstimada(monto, plazo, tasaInteres);
 
-        return {
-          id: simulacion.id_simulacion,
-          cliente: simulacion.rut,
-          monto,
-          plazo,
-          tasaInteres,
-          cuotaMensual: Number(simulacion.monto_cuota) || cuotaCalculada,
-          totalPagar: Number(simulacion.monto_total) || cuotaCalculada * plazo,
-          incluye_seguro_desgravamen: Boolean(simulacion.incluye_seguro_desgravamen),
-          incluye_seguro_cesantia: Boolean(simulacion.incluye_seguro_cesantia),
-          score: calcularScore(simulacion.monto, simulacion.cuotas)
-        };
-      });
+          return {
+            id: simulacion.id_simulacion,
+            cliente: simulacion.rut,
+            monto,
+            plazo,
+            tasaInteres,
+            cuotaMensual: Number(simulacion.monto_cuota) || cuotaCalculada,
+            totalPagar: Number(simulacion.monto_total) || cuotaCalculada * plazo,
+            incluye_seguro_desgravamen: Boolean(simulacion.incluye_seguro_desgravamen),
+            incluye_seguro_cesantia: Boolean(simulacion.incluye_seguro_cesantia),
+            score: calcularScore(simulacion.monto, simulacion.cuotas)
+          };
+        });
     } catch (error) {
       console.error('Error al cargar simulaciones para evaluación:', error);
       mockData.evaluacion = [];
@@ -210,10 +214,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.addEventListener('click', (e) => {
     if (e.target.matches('[data-action="aprobar"]') || e.target.matches('[data-action="rechazar"]')) {
-      const id = e.target.dataset.id;
+      const id = parseInt(e.target.dataset.id);
+      const accion = e.target.dataset.action;
 
-      // Simulación: Eliminar la solicitud de la lista de evaluación
-      mockData.evaluacion = mockData.evaluacion.filter(s => s.id !== parseInt(id));
+      // Buscar la solicitud antes de eliminarla
+      const solicitud = mockData.evaluacion.find(s => s.id === id);
+
+      // Eliminar la solicitud de la lista de evaluación
+      mockData.evaluacion = mockData.evaluacion.filter(s => s.id !== id);
+
+      // Si se aprueba, mover a sin-firmar y persistir
+      if (accion === 'aprobar' && solicitud) {
+        mockData['sin-firmar'].push(solicitud);
+        idsYaProcesados.add(String(id));
+        guardarEstado();
+      }
 
       // Volver a renderizar la pestaña actual para que se vea el cambio
       const activeTab = document.querySelector('.tab-button.active').dataset.tab;
