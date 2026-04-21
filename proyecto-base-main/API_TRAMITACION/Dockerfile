@@ -11,8 +11,7 @@ RUN npm install
 #Copy remaining files
 COPY ./ ./
 
-COPY wait-for-it.sh /wait-for-it.sh
-RUN chmod +x /wait-for-it.sh
+RUN chmod +x ./wait-for-it.sh
 CMD ["./wait-for-it.sh", "mysql:3306", "--", "npm", "start"]
 
 #Default command
