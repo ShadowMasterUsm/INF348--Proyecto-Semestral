@@ -12,7 +12,7 @@ if (btnSolicitar) {
   btnSolicitar.addEventListener('click', () => {
     if (localStorage.getItem("loggedIn") === "true") {
       // Usuario con sesión → puede solicitar
-      window.location.href = "simulacion.html";
+      window.location.href = "solicitud.html";
     } else {
       // Usuario sin sesión → enviarlo a iniciar sesión
       window.location.href = "acceso.html";
