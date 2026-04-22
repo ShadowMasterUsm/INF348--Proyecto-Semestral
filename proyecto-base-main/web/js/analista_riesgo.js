@@ -16,9 +16,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const guardarEstado = () => {
     try {
+      // Merge aprobadas: preservar las firmadas por el cliente sin sobreescribirlas
+      const estadoActual = cargarEstadoGuardado();
+      const aprobadasExistentes = estadoActual?.aprobadas ?? [];
+      const aprobadasMerge = [...aprobadasExistentes];
+      for (const ap of mockData['aprobadas']) {
+        const yaExiste = aprobadasMerge.some(a => String(a.id) === String(ap.id));
+        if (!yaExiste) aprobadasMerge.push(ap);
+      }
       localStorage.setItem(STORAGE_KEY, JSON.stringify({
         'sin-firmar': mockData['sin-firmar'],
-        procesados: mockData['sin-firmar'].map(s => s.id),
+        aprobadas: aprobadasMerge,
+        procesados: [...idsYaProcesados],
       }));
     } catch (e) { console.warn('No se pudo guardar el estado:', e); }
   };
@@ -81,18 +90,44 @@ document.addEventListener('DOMContentLoaded', () => {
     return `Monto ${formatearMoneda(solicitud.monto)}, plazo ${Number(solicitud.plazo) || 0} meses, tasa ${formatearTasa(solicitud.tasaInteres)}${detalleSeguros}`;
   };
 
+  const leerDesdeLocalStorage = () => {
+    try {
+      const raw = localStorage.getItem('cliente_solicitudes_enviadas');
+      const enviadas = raw ? JSON.parse(raw) : [];
+      const idsSinFirmar = new Set((mockData['sin-firmar'] ?? []).map(s => String(s.id)));
+      const idsAprobadas = new Set((mockData['aprobadas'] ?? []).map(s => String(s.id)));
+      return enviadas
+        .filter(item => {
+          const id = String(item.id || item.id_simulacion || '');
+          return id !== '' && !idsYaProcesados.has(id) && !idsSinFirmar.has(id) && !idsAprobadas.has(id);
+        })
+        .map(item => {
+          const monto = Number(item.monto) || 0;
+          const plazo = Number(item.cuotas) || 0;
+          const tasaInteres = Number(item.tasa_interes_anual) || 12.5;
+          const cuotaCalculada = calcularCuotaMensualEstimada(monto, plazo, tasaInteres);
+          return {
+            id: item.id || item.id_simulacion,
+            cliente: item.rut,
+            monto, plazo, tasaInteres,
+            cuotaMensual: Number(item.monto_cuota) || cuotaCalculada,
+            totalPagar: Number(item.monto_total) || cuotaCalculada * plazo,
+            incluye_seguro_desgravamen: Boolean(item.seguroDesgravamen || item.incluye_seguro_desgravamen),
+            incluye_seguro_cesantia: Boolean(item.seguroCesantia || item.incluye_seguro_cesantia),
+            score: calcularScore(monto, plazo)
+          };
+        });
+    } catch(e) { return []; }
+  };
+
   const cargarSolicitudesEvaluacion = async () => {
+    let listaDatos = [];
     try {
       const response = await fetch(API_SOLICITUDES);
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const payload = await response.json();
-      const listaDatos = Array.isArray(payload.data) ? payload.data : [];
-
-      mockData.evaluacion = listaDatos
+      const datosAPI = Array.isArray(payload.data) ? payload.data : [];
+      listaDatos = datosAPI
         .filter((item) => {
           const idUnico = item.id_credito || item.id_solicitud || item.id || item.id_simulacion;
           return idUnico != null && !idsYaProcesados.has(String(idUnico));
@@ -103,13 +138,8 @@ document.addEventListener('DOMContentLoaded', () => {
           const plazo = Number(item.cuotas) || 0;
           const tasaInteres = Number(item.tasa_interes_anual) || 12.5;
           const cuotaCalculada = calcularCuotaMensualEstimada(monto, plazo, tasaInteres);
-
           return {
-            id: idUnico,
-            cliente: item.rut,
-            monto,
-            plazo,
-            tasaInteres,
+            id: idUnico, cliente: item.rut, monto, plazo, tasaInteres,
             cuotaMensual: Number(item.monto_cuota) || cuotaCalculada,
             totalPagar: Number(item.monto_total) || cuotaCalculada * plazo,
             incluye_seguro_desgravamen: Boolean(item.incluye_seguro_desgravamen),
@@ -118,9 +148,12 @@ document.addEventListener('DOMContentLoaded', () => {
           };
         });
     } catch (error) {
-      console.error('Error al cargar simulaciones para evaluación:', error);
-      mockData.evaluacion = [];
+      console.warn('API no disponible, usando localStorage:', error.message);
     }
+    // Complementar con solicitudes del localStorage
+    const desdeLS = leerDesdeLocalStorage();
+    const idsAPI = new Set(listaDatos.map(s => String(s.id)));
+    mockData.evaluacion = [...listaDatos, ...desdeLS.filter(s => !idsAPI.has(String(s.id)))];
   };
 
   const renderSolicitudes = (tab) => {
@@ -208,6 +241,11 @@ document.addEventListener('DOMContentLoaded', () => {
       await cargarSolicitudesEvaluacion();
     }
 
+    if (tab === 'aprobadas') {
+      const estadoFresh = cargarEstadoGuardado();
+      mockData.aprobadas = estadoFresh?.aprobadas ?? [];
+    }
+
     renderSolicitudes(tab);
   };
 
@@ -219,23 +257,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.addEventListener('click', (e) => {
     if (e.target.matches('[data-action="aprobar"]') || e.target.matches('[data-action="rechazar"]')) {
-      const id = parseInt(e.target.dataset.id);
+      const idStr = String(e.target.dataset.id);
       const accion = e.target.dataset.action;
 
-      // Buscar la solicitud antes de eliminarla
-      const solicitud = mockData.evaluacion.find(s => s.id === id);
+      const solicitud = mockData.evaluacion.find(s => String(s.id) === idStr);
+      mockData.evaluacion = mockData.evaluacion.filter(s => String(s.id) !== idStr);
 
-      // Eliminar la solicitud de la lista de evaluación
-      mockData.evaluacion = mockData.evaluacion.filter(s => s.id !== id);
+      // Marcar como procesado (aprobado o rechazado no debe reaparecer)
+      idsYaProcesados.add(idStr);
 
-      // Si se aprueba, mover a sin-firmar y persistir
       if (accion === 'aprobar' && solicitud) {
         mockData['sin-firmar'].push(solicitud);
-        idsYaProcesados.add(String(id));
-        guardarEstado();
       }
 
-      // Volver a renderizar la pestaña actual para que se vea el cambio
+      // Persistir siempre (para que rechazados tampoco reaparezcan)
+      guardarEstado();
+
       const activeTab = document.querySelector('.tab-button.active').dataset.tab;
       renderSolicitudes(activeTab);
     }

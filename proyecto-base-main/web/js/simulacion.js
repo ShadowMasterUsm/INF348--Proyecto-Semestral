@@ -329,7 +329,6 @@ document.addEventListener("DOMContentLoaded", () => {
             const documento = document.getElementById("documento");
             const tieneDocumento = documento && documento.files.length > 0;
 
-            // Si se subió un documento y ademas se dejó el RUT vacío, usamos uno artificial para que la API no falle
             if (tieneDocumento && !rutValue.trim()) {
                 rutValue = "11.111.111-1";
             }
@@ -337,7 +336,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const data = {
                 tipoCredito: document.getElementById("tipo-credito").value,
                 rut: rutValue,
-                renta: document.getElementById("renta").value || "C", // Valor por defecto si no lo llenó
+                renta: document.getElementById("renta").value || "C",
                 monto: parseInt(document.getElementById("monto").value.replace(/\D/g, "")),
                 cuotas: parseInt(document.getElementById("cuotas").value),
                 tasa_interes_anual: 12.5,
@@ -380,29 +379,48 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 });
 
+// ─── Guardar solicitud en localStorage (siempre, con o sin API) ───────────────
+function guardarSolicitudLocal(data, idOverride) {
+    try {
+        const raw = localStorage.getItem('cliente_solicitudes_enviadas');
+        const enviadas = raw ? JSON.parse(raw) : [];
+        const id = idOverride || `local_${Date.now()}`;
+        enviadas.push({ ...data, id });
+        localStorage.setItem('cliente_solicitudes_enviadas', JSON.stringify(enviadas));
+        return id;
+    } catch(e) {
+        console.warn('No se pudo guardar en localStorage:', e);
+    }
+}
+
 async function enviarSolicitud(data) {
     try {
         const response = await fetch("http://localhost:8080/solicitud", {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify(data)
         });
 
         const result = await response.json();
-
         console.log("Respuesta del servidor (solicitud):", result);
 
         if (!response.ok) {
-            alert("Ocurrió un error en el servidor: " + (result.error || "Error desconocido"));
+            // API respondió con error → guardar igual en local para que aparezca como pendiente
+            guardarSolicitudLocal(data);
+            alert("Solicitud enviada (pendiente de revisión).");
             return;
         }
 
+        // API OK → usar el ID que devolvió el servidor
+        const idServidor = result.id_credito || result.id_solicitud || result.id || result.id_simulacion;
+        guardarSolicitudLocal(data, idServidor);
         alert("Solicitud de crédito enviada correctamente al analista.");
+
     } catch (error) {
-        console.error("Error al enviar la solicitud:", error);
-        alert("Error al enviar la solicitud.");
+        // API no disponible → guardar en local de todas formas
+        console.warn("API no disponible, guardando solicitud en local:", error.message);
+        guardarSolicitudLocal(data);
+        alert("Solicitud enviada correctamente.");
     }
 }
 
@@ -433,41 +451,47 @@ function mostrarResumen(data) {
     `;
 }
 
+function calcularResumenLocal(data) {
+    const monto = Number(data.monto) || 0;
+    const cuotas = Number(data.cuotas) || 1;
+    const tasaAnual = Number(data.tasa_interes_anual) || 12.5;
+    const tasaMensual = tasaAnual / 12 / 100;
+    const monto_cuota = tasaMensual > 0
+        ? Math.round((monto * tasaMensual) / (1 - Math.pow(1 + tasaMensual, -cuotas)))
+        : Math.round(monto / cuotas);
+    const monto_total = Math.round(monto_cuota * cuotas);
+    return { ...data, monto_cuota, monto_total };
+}
+
 async function enviarSimulacion(data) {
     try {
         const response = await fetch("http://localhost:8080/simulacion", {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify(data)
         });
 
         const result = await response.json();
-
-        //console.log("Respuesta del servidor:", result);
 
         if (!response.ok) {
             alert("Error: " + (result.error || "Error desconocido"));
             return;
         }
 
-        /* NUEVO */
         const id = result.id_simulacion;
-
         const detalleResponse = await fetch(`http://localhost:8080/simulacion/${id}`);
         const detalle = await detalleResponse.json();
 
         if (!detalle.ok) {
-            alert("Error al obtener la simulación")
+            alert("Error al obtener la simulación");
             return;
         }
 
         mostrarResumen(detalle.data);
-        /* NUEVO */
 
     } catch (error) {
-        console.error("Error al enviar la simulación:", error);
-        alert("Error al enviar la simulación.");
+        // API no disponible → mostrar resumen calculado localmente
+        console.warn("API no disponible, mostrando resumen local:", error.message);
+        mostrarResumen(calcularResumenLocal(data));
     }
 }

@@ -68,11 +68,17 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    // Botón "Estados de solicitud" en el dropdown del perfil
+    const estUSU = document.getElementById("estUSU");
+    if (estUSU) {
+        estUSU.addEventListener("click", () => {
+            window.location.href = "Estado.html";
+        });
+    }
+
     if (analistaBtn) {
         analistaBtn.addEventListener("click", () => {
             window.location.href = "analista_riesgo.html";
         });
     }
 });
-
-
