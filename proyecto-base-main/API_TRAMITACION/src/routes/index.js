@@ -13,4 +13,7 @@ router.post('/simulacion', index.crearSimulacion);
 router.get('/simulacion', index.obtenerSimulaciones);
 router.get('/simulacion/:id', index.obtenerSimulacionPorId);
 
+router.post('/solicitud', index.crearSolicitud);
+router.get('/solicitudes', index.obtenerSolicitudes);
+
 module.exports = router;

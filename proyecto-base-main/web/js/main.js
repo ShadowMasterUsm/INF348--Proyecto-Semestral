@@ -4,7 +4,7 @@ const btnSolicitar = document.querySelector('.btn-primary');
 
 if (btnSimular) {
   btnSimular.addEventListener('click', () => {
-    window.location.href = "simulacion.html";
+    window.location.href = "simulacion.html?mode=simular";
   });
 }
 
@@ -12,7 +12,7 @@ if (btnSolicitar) {
   btnSolicitar.addEventListener('click', () => {
     if (localStorage.getItem("loggedIn") === "true") {
       // Usuario con sesión → puede solicitar
-      window.location.href = "solicitud.html";
+      window.location.href = "simulacion.html?mode=solicitar";
     } else {
       // Usuario sin sesión → enviarlo a iniciar sesión
       window.location.href = "acceso.html";

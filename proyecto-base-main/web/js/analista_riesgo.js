@@ -1,7 +1,8 @@
 document.addEventListener('DOMContentLoaded', () => {
   const tabs = document.querySelectorAll('.tab-button');
   const tabContents = document.querySelectorAll('.tab-content');
-  const API_SIMULACIONES = 'http://localhost:8080/simulacion';
+  // Nota: Si en tu API creaste una nueva ruta para leer créditos, actualiza esto (ej. '/creditos')
+  const API_SOLICITUDES = 'http://localhost:8080/solicitudes';
 
   // ─── Persistencia ─────────────────────────────────────────────────────────────
   const STORAGE_KEY = 'analista_riesgo_estado';
@@ -82,34 +83,38 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const cargarSolicitudesEvaluacion = async () => {
     try {
-      const response = await fetch(API_SIMULACIONES);
+      const response = await fetch(API_SOLICITUDES);
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
       }
 
       const payload = await response.json();
-      const simulaciones = Array.isArray(payload.data) ? payload.data : [];
+      const listaDatos = Array.isArray(payload.data) ? payload.data : [];
 
-      mockData.evaluacion = simulaciones
-        .filter((simulacion) => !idsYaProcesados.has(String(simulacion.id_simulacion)))
-        .map((simulacion) => {
-          const monto = Number(simulacion.monto) || 0;
-          const plazo = Number(simulacion.cuotas) || 0;
-          const tasaInteres = Number(simulacion.tasa_interes_anual) || 12.5;
+      mockData.evaluacion = listaDatos
+        .filter((item) => {
+          const idUnico = item.id_credito || item.id_solicitud || item.id || item.id_simulacion;
+          return idUnico != null && !idsYaProcesados.has(String(idUnico));
+        })
+        .map((item) => {
+          const idUnico = item.id_credito || item.id_solicitud || item.id || item.id_simulacion;
+          const monto = Number(item.monto) || 0;
+          const plazo = Number(item.cuotas) || 0;
+          const tasaInteres = Number(item.tasa_interes_anual) || 12.5;
           const cuotaCalculada = calcularCuotaMensualEstimada(monto, plazo, tasaInteres);
 
           return {
-            id: simulacion.id_simulacion,
-            cliente: simulacion.rut,
+            id: idUnico,
+            cliente: item.rut,
             monto,
             plazo,
             tasaInteres,
-            cuotaMensual: Number(simulacion.monto_cuota) || cuotaCalculada,
-            totalPagar: Number(simulacion.monto_total) || cuotaCalculada * plazo,
-            incluye_seguro_desgravamen: Boolean(simulacion.incluye_seguro_desgravamen),
-            incluye_seguro_cesantia: Boolean(simulacion.incluye_seguro_cesantia),
-            score: calcularScore(simulacion.monto, simulacion.cuotas)
+            cuotaMensual: Number(item.monto_cuota) || cuotaCalculada,
+            totalPagar: Number(item.monto_total) || cuotaCalculada * plazo,
+            incluye_seguro_desgravamen: Boolean(item.incluye_seguro_desgravamen),
+            incluye_seguro_cesantia: Boolean(item.incluye_seguro_cesantia),
+            score: calcularScore(item.monto, item.cuotas)
           };
         });
     } catch (error) {

@@ -1,4 +1,30 @@
 document.addEventListener("DOMContentLoaded", () => {
+    // ---- LÓGICA DE MODO (Simular vs Solicitar) ----
+    const urlParams = new URLSearchParams(window.location.search);
+    const mode = urlParams.get('mode');
+    
+    // Detectamos si es modo solicitud por el parámetro URL o si el nombre del archivo contiene "solicitar"
+    const isSolicitar = mode === 'solicitar' || window.location.pathname.toLowerCase().includes('solicitar');
+
+    const tituloPrincipal = document.querySelector(".hero h1");
+    const tituloSecundario = document.querySelector(".main-title");
+    const btnSimulacion = document.querySelector(".ver-simulacion");
+    // Buscamos el botón por ID, o lo buscamos por su texto como respaldo por si olvidaste el ID en tu HTML
+    const btnSolicitarFinal = document.getElementById("btnSolicitarFinal") || Array.from(document.querySelectorAll('button, .btn')).find(el => el.textContent.toLowerCase().includes('solicitar'));
+
+    if (isSolicitar) {
+        if (tituloPrincipal) tituloPrincipal.textContent = "Solicitud de Crédito";
+        if (tituloSecundario) tituloSecundario.textContent = "Solicita tu Crédito paso a paso";
+        if (btnSimulacion) btnSimulacion.style.display = "none";
+        if (btnSolicitarFinal) btnSolicitarFinal.style.display = "inline-block";
+    } else {
+        if (tituloPrincipal) tituloPrincipal.textContent = "Simulación de Crédito";
+        if (tituloSecundario) tituloSecundario.textContent = "Simula tu Crédito paso a paso";
+        if (btnSimulacion) btnSimulacion.style.display = "inline-block";
+        if (btnSolicitarFinal) btnSolicitarFinal.style.display = "none";
+    }
+    // -------------------------------------------------
+
     const inputDocumento = document.getElementById("documento");
 
     if (inputDocumento) {
@@ -308,32 +334,89 @@ document.addEventListener("DOMContentLoaded", () => {
     mostrarPaso(pasoActual);
 
 
-    document.querySelector(".ver-simulacion").addEventListener("click", () => {
-        let rutValue = document.getElementById("rut").value;
-        const documento = document.getElementById("documento");
-        const tieneDocumento = documento && documento.files.length > 0;
+    if (btnSimulacion) {
+        btnSimulacion.addEventListener("click", (e) => {
+            e.preventDefault();
+            let rutValue = document.getElementById("rut").value;
+            const documento = document.getElementById("documento");
+            const tieneDocumento = documento && documento.files.length > 0;
 
-        // Si se subió un documento y ademas se dejó el RUT vacío, usamos uno artificial para que la API no falle
-        if (tieneDocumento && !rutValue.trim()) {
-            rutValue = "11.111.111-1";
+            // Si se subió un documento y ademas se dejó el RUT vacío, usamos uno artificial para que la API no falle
+            if (tieneDocumento && !rutValue.trim()) {
+                rutValue = "11.111.111-1";
+            }
+
+            const data = {
+                tipoCredito: document.getElementById("tipo-credito").value,
+                rut: rutValue,
+                renta: document.getElementById("renta").value || "C", // Valor por defecto si no lo llenó
+                monto: parseInt(document.getElementById("monto").value.replace(/\D/g, "")),
+                cuotas: parseInt(document.getElementById("cuotas").value),
+                tasa_interes_anual: 12.5,
+                mesInicio: document.getElementById("mes-pago").value,
+                diaPago: document.getElementById("dia-pago").value,
+                seguroCesantia: document.getElementById("seguroCesantia").checked,
+                seguroDesgravamen: document.getElementById("seguroDesgravamen").checked
+            };
+
+            enviarSimulacion(data);
+        });
+    }
+
+    if (btnSolicitarFinal) {
+        btnSolicitarFinal.addEventListener("click", (e) => {
+            e.preventDefault();
+            let rutValue = document.getElementById("rut").value;
+            const documento = document.getElementById("documento");
+            const tieneDocumento = documento && documento.files.length > 0;
+
+            if (tieneDocumento && !rutValue.trim()) {
+                rutValue = "11.111.111-1";
+            }
+
+            const data = {
+                tipoCredito: document.getElementById("tipo-credito").value,
+                rut: rutValue,
+                renta: document.getElementById("renta").value || "C",
+                monto: parseInt(document.getElementById("monto").value.replace(/\D/g, "")),
+                cuotas: parseInt(document.getElementById("cuotas").value),
+                tasa_interes_anual: 12.5,
+                mesInicio: document.getElementById("mes-pago").value,
+                diaPago: document.getElementById("dia-pago").value,
+                seguroCesantia: document.getElementById("seguroCesantia").checked,
+                seguroDesgravamen: document.getElementById("seguroDesgravamen").checked
+            };
+
+            enviarSolicitud(data);
+        });
+    }
+});
+
+async function enviarSolicitud(data) {
+    try {
+        const response = await fetch("http://localhost:8080/solicitud", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(data)
+        });
+
+        const result = await response.json();
+
+        console.log("Respuesta del servidor (solicitud):", result);
+
+        if (!response.ok) {
+            alert("Ocurrió un error en el servidor: " + (result.error || "Error desconocido"));
+            return;
         }
 
-        const data = {
-            tipoCredito: document.getElementById("tipo-credito").value,
-            rut: rutValue,
-            renta: document.getElementById("renta").value || "C", // Valor por defecto si no lo llenó
-            monto: parseInt(document.getElementById("monto").value.replace(/\D/g, "")),
-            cuotas: parseInt(document.getElementById("cuotas").value),
-            tasa_interes_anual: 12.5,
-            mesInicio: document.getElementById("mes-pago").value,
-            diaPago: document.getElementById("dia-pago").value,
-            seguroCesantia: document.getElementById("seguroCesantia").checked,
-            seguroDesgravamen: document.getElementById("seguroDesgravamen").checked
-        };
-
-        enviarSimulacion(data);
-    });
-});
+        alert("Solicitud de crédito enviada correctamente al analista.");
+    } catch (error) {
+        console.error("Error al enviar la solicitud:", error);
+        alert("Error al enviar la solicitud.");
+    }
+}
 
 async function enviarSimulacion(data) {
     try {
