@@ -90,18 +90,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     p.style.color = "red";
                 });
             }
-
-            //if (file) {
-            //    const p = document.createElement("p");
-            //    p.classList.add("doc-msg");
-            //    p.style.color = "#28a745";
-            //    p.style.fontSize = "0.9em";
-            //    p.style.marginTop = "5px";
-            //    p.textContent = `Archivo '${file.name}' seleccionado con éxito.`;
-            //    inputDocumento.insertAdjacentElement("afterend", p);
-            //}
-
-
         });
     }
 
@@ -418,6 +406,33 @@ async function enviarSolicitud(data) {
     }
 }
 
+function mostrarResumen(data) {
+    const main = document.querySelector("main");
+
+    main.innerHTML = `
+        <section class="hero">
+            <h1>Resumen de Simulación</h1>
+        </section>
+
+        <section style="max-width: 800px; margin: 40px auto; background: white; padding: 30px; border-radius: 10px;">
+            <h2>Detalle del crédito</h2>
+
+            <p><strong>Monto solicitado:</strong> $${data.monto.toLocaleString("es-CL")}</p>
+            <p><strong>Monto total:</strong> $${data.monto_total?.toLocaleString("es-CL") || "No disponible"}</p>
+            <p><strong>Monto cuota:</strong> $${data.monto_cuota?.toLocaleString("es-CL") || "No disponible"}</p>
+            <p><strong>Número de cuotas:</strong> ${data.cuotas}</p>
+            <p><strong>Tasa de interés anual:</strong> ${data.tasa_interes_anual}%</p>
+
+            <div style="margin-top: 30px;">
+                <button onclick="window.location.href='index.html'" 
+                    style="background:#2B4C7E; color:white; padding:10px 20px; border:none; border-radius:20px; cursor:pointer;">
+                    Volver al inicio
+                </button>
+            </div>
+        </section>
+    `;
+}
+
 async function enviarSimulacion(data) {
     try {
         const response = await fetch("http://localhost:8080/simulacion", {
@@ -430,75 +445,29 @@ async function enviarSimulacion(data) {
 
         const result = await response.json();
 
-        console.log("Respuesta del servidor:", result);
+        //console.log("Respuesta del servidor:", result);
 
         if (!response.ok) {
-            alert("Ocurrió un error en el servidor: " + (result.error || "Error desconocido"));
+            alert("Error: " + (result.error || "Error desconocido"));
             return;
         }
 
-        alert("Simulación enviada correctamente.");
+        /* NUEVO */
+        const id = result.id_simulacion;
+
+        const detalleResponse = await fetch(`http://localhost:8080/simulacion/${id}`);
+        const detalle = await detalleResponse.json();
+
+        if (!detalle.ok) {
+            alert("Error al obtener la simulación")
+            return;
+        }
+
+        mostrarResumen(detalle.data);
+        /* NUEVO */
+
     } catch (error) {
         console.error("Error al enviar la simulación:", error);
         alert("Error al enviar la simulación.");
     }
 }
-
-
-/*
-document.addEventListener("DOMContentLoaded", () => {
-    // 1) Seleccionar todos los elementos con clase ".paso"
-    const pasos = document.querySelectorAll(".paso");
-
-    // 2) Seleccionar todos los botones de la clase "btn continuar"
-    const botonesContinuar = document.querySelectorAll(".btn.continuar");
-
-    // 3) Seleccionar todos los botones de la clase "btn volver"
-    const botonesVolver = document.querySelectorAll(".btn.volver");
-
-    // 4) Varieble que guarda el índice del paso actualmente visible
-    let pasoActual = 0;
-
-    pasos.forEach((paso, i) => {
-        paso.setAttribute('data-step', i + 1);
-    });
-
-    // 5) Función que muestra el paso del índice que recibe y oculta los demás
-    const mostrarPaso = (index) => {
-        pasos.forEach((paso, i) => {
-            if (i == index) {
-                paso.classList.add("activo");
-                paso.classList.remove("inactivo");
-            } else {
-                paso.classList.add("inactivo");
-                paso.classList.remove("activo");
-            }
-        });
-    };
-
-    // 6) Añade el evento click a cada botón "CONTINUAR"
-    botonesContinuar.forEach((btn) => {
-        btn.addEventListener("click", () => {
-            // 6.1) Si no estamos en el último paso, avanzamos
-            if (pasoActual < pasos.length - 1) {
-                pasoActual++;
-                mostrarPaso(pasoActual);
-            }
-        });
-    });
-
-    // 7) Añade el evento click a cada botón "VOLVER"
-    botonesVolver.forEach((btn) => {
-        btn.addEventListener("click", () => {
-            // 7.1) Si no estamos en el primer paso, retrocedemos
-            if (pasoActual > 0) {
-                pasoActual--;
-                mostrarPaso(pasoActual);
-            }
-        });
-    });
-
-    // 8) Al cargar, mostramos el primer paso
-    mostrarPaso(pasoActual);
-});
-*/

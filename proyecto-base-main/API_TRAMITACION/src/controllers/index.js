@@ -32,6 +32,22 @@ const crearSimulacion = (req, res) => {
     }
 
     const tasaInteresAnual = Number(tasa_interes_anual) || 12.5;
+
+    /* NUEVO */
+    const calcularCuota = (monto, cuotas, tasaAnual) => {
+        const tasaMensual = tasaAnual / 12 / 100;
+
+        if (tasaMensual === 0) {
+            return monto / cuotas;
+        }
+
+        return (monto * tasaMensual) / (1 - Math.pow(1 + tasaMensual, -cuotas));
+    };
+
+    const cuota = calcularCuota(monto, cuotas, tasaInteresAnual);
+    const total = cuota * cuotas;
+    /* NUEVO */
+
     const tipoCreditoNormalizado = String(tipoCredito).trim().toLowerCase();
     const rutNormalizado = String(rut).trim();
 
@@ -55,8 +71,9 @@ const crearSimulacion = (req, res) => {
         const query =
             'INSERT INTO simulacion (' +
             'rut, id_tipo_credito, monto, cuotas, tasa_interes_anual, ' +
-            'incluye_seguro_desgravamen, incluye_seguro_cesantia, fecha_primer_pago' +
-            ') VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
+            'incluye_seguro_desgravamen, incluye_seguro_cesantia, fecha_primer_pago, ' +
+            'monto_total, monto_cuota' +
+            ') VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
 
         database.query(query, [
             rutNormalizado,
@@ -66,7 +83,9 @@ const crearSimulacion = (req, res) => {
             tasaInteresAnual,
             seguroDesgravamen ? 1 : 0,
             seguroCesantia ? 1 : 0,
-            fechaPrimerPago
+            fechaPrimerPago,
+            total,
+            cuota
         ], (err, result) => {
             if (err) {
                 console.error('Error al guardar simulación:', err);
