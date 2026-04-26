@@ -142,7 +142,15 @@ body {
     display: flex;
     gap: 12px;
 }
-.btn.continuar {
+
+.btn {
+    padding: 10px 22px;
+    border-radius: 25px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.continuar {
     background-color: #2B4C7E;
     color: #fff;
     border: none;
@@ -152,7 +160,7 @@ body {
     font-weight: bold;
     transition: background-color 0.3s;
 }
-.btn.volver {
+.volver {
     background: transparent;
     color: #2b4c7e;
     border: 2px solid rgba(47, 71, 144, 0.2);
@@ -162,7 +170,7 @@ body {
     font-weight: bold;
 }
 
-.btn.ver-simulacion {
+.ver-simulacion {
     background: transparent;
     color: #2b4c7e;
     border: 2px solid rgba(47, 71, 144, 0.2);
