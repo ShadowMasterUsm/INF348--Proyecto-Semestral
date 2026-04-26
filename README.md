@@ -55,6 +55,3 @@ SHOW DATABASES;         // Mostrar bases de datos
 USE BD06_TRAMITACION;   // Seleccionar base de datos
 SHOW TABLES;            // Mostrar tablas de la base de datos seleccionada
 ```
-
-
-probe
