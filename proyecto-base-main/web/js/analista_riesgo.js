@@ -1,22 +1,19 @@
 document.addEventListener('DOMContentLoaded', () => {
   const tabs = document.querySelectorAll('.tab-button');
   const tabContents = document.querySelectorAll('.tab-content');
-  // Nota: Si en tu API creaste una nueva ruta para leer créditos, actualiza esto (ej. '/creditos')
-  const API_SOLICITUDES = 'http://localhost:8080/solicitudes';
+  const API_BASE = 'http://localhost:8080';
+  const API_SOLICITUDES = `${API_BASE}/solicitudes`;
 
-  // ─── Persistencia ─────────────────────────────────────────────────────────────
+  // ─── Persistencia localStorage ────────────────────────────────────────────
   const STORAGE_KEY = 'analista_riesgo_estado';
 
   const cargarEstadoGuardado = () => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      return raw ? JSON.parse(raw) : null;
-    } catch { return null; }
+    try { const raw = localStorage.getItem(STORAGE_KEY); return raw ? JSON.parse(raw) : null; }
+    catch { return null; }
   };
 
   const guardarEstado = () => {
     try {
-      // Merge aprobadas: preservar las firmadas por el cliente sin sobreescribirlas
       const estadoActual = cargarEstadoGuardado();
       const aprobadasExistentes = estadoActual?.aprobadas ?? [];
       const aprobadasMerge = [...aprobadasExistentes];
@@ -35,61 +32,34 @@ document.addEventListener('DOMContentLoaded', () => {
   const estadoGuardado = cargarEstadoGuardado();
   const idsYaProcesados = new Set((estadoGuardado?.procesados ?? []).map(String));
 
-  // datos estaticos, luego hay que reemplazar con llamadas a la API pero es para probar
   const mockData = {
     evaluacion: [],
     aprobadas: [],
     'sin-firmar': estadoGuardado?.['sin-firmar'] ?? [],
   };
 
-  const getScoreClass = (score) => {
-    if (score > 70) return 'score-high';
-    if (score > 50) return 'score-medium';
-    return 'score-low';
-  };
-
-  const calcularScore = (monto, cuotas) => {
-    const montoNum = Number(monto) || 0;
-    const cuotasNum = Number(cuotas) || 1;
-    const scoreBruto = 100 - Math.round((montoNum / 1000000) * 2 + cuotasNum * 0.8);
-    return Math.max(5, Math.min(95, scoreBruto));
-  };
-
+  // ─── Helpers ──────────────────────────────────────────────────────────────
+  const getScoreClass = (score) => { if (score > 70) return 'score-high'; if (score > 50) return 'score-medium'; return 'score-low'; };
+  const calcularScore = (monto, cuotas) => { const m = Number(monto) || 0; const c = Number(cuotas) || 1; return Math.max(5, Math.min(95, 100 - Math.round((m / 1000000) * 2 + c * 0.8))); };
   const formatearMoneda = (valor) => `$${Number(valor || 0).toLocaleString('es-CL')}`;
-
   const formatearTasa = (valor) => `${Number(valor || 0).toFixed(1)}%`;
-
   const calcularCuotaMensualEstimada = (monto, plazo, tasaInteresAnual) => {
-    const principal = Number(monto) || 0;
-    const meses = Number(plazo) || 0;
-    const tasaAnual = Number(tasaInteresAnual) || 0;
-
+    const principal = Number(monto) || 0; const meses = Number(plazo) || 0; const tasaAnual = Number(tasaInteresAnual) || 0;
     if (meses <= 0) return 0;
-
     const tasaMensual = tasaAnual / 12 / 100;
-    if (tasaMensual <= 0) {
-      return principal / meses;
-    }
-
+    if (tasaMensual <= 0) return principal / meses;
     return (principal * tasaMensual) / (1 - Math.pow(1 + tasaMensual, -meses));
   };
 
   const obtenerConllevaSolicitud = (solicitud) => {
     const seguros = [];
-
-    if (solicitud.incluye_seguro_desgravamen) {
-      seguros.push('desgravamen');
-    }
-
-    if (solicitud.incluye_seguro_cesantia) {
-      seguros.push('cesantía');
-    }
-
+    if (solicitud.incluye_seguro_desgravamen) seguros.push('desgravamen');
+    if (solicitud.incluye_seguro_cesantia) seguros.push('cesantía');
     const detalleSeguros = seguros.length > 0 ? `, seguros ${seguros.join(' y ')}` : '';
-
     return `Monto ${formatearMoneda(solicitud.monto)}, plazo ${Number(solicitud.plazo) || 0} meses, tasa ${formatearTasa(solicitud.tasaInteres)}${detalleSeguros}`;
   };
 
+  // ─── Cargar desde localStorage (fallback) ─────────────────────────────────
   const leerDesdeLocalStorage = () => {
     try {
       const raw = localStorage.getItem('cliente_solicitudes_enviadas');
@@ -107,9 +77,7 @@ document.addEventListener('DOMContentLoaded', () => {
           const tasaInteres = Number(item.tasa_interes_anual) || 12.5;
           const cuotaCalculada = calcularCuotaMensualEstimada(monto, plazo, tasaInteres);
           return {
-            id: item.id || item.id_simulacion,
-            cliente: item.rut,
-            monto, plazo, tasaInteres,
+            id: item.id || item.id_simulacion, cliente: item.rut, monto, plazo, tasaInteres,
             cuotaMensual: Number(item.monto_cuota) || cuotaCalculada,
             totalPagar: Number(item.monto_total) || cuotaCalculada * plazo,
             incluye_seguro_desgravamen: Boolean(item.seguroDesgravamen || item.incluye_seguro_desgravamen),
@@ -120,6 +88,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch(e) { return []; }
   };
 
+  // ─── Cargar solicitudes para evaluación ───────────────────────────────────
   const cargarSolicitudesEvaluacion = async () => {
     let listaDatos = [];
     try {
@@ -128,11 +97,11 @@ document.addEventListener('DOMContentLoaded', () => {
       const payload = await response.json();
       const datosAPI = Array.isArray(payload.data) ? payload.data : [];
       listaDatos = datosAPI
-        .filter((item) => {
+        .filter(item => {
           const idUnico = item.id_credito || item.id_solicitud || item.id || item.id_simulacion;
           return idUnico != null && !idsYaProcesados.has(String(idUnico));
         })
-        .map((item) => {
+        .map(item => {
           const idUnico = item.id_credito || item.id_solicitud || item.id || item.id_simulacion;
           const monto = Number(item.monto) || 0;
           const plazo = Number(item.cuotas) || 0;
@@ -150,63 +119,35 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (error) {
       console.warn('API no disponible, usando localStorage:', error.message);
     }
-    // Complementar con solicitudes del localStorage
     const desdeLS = leerDesdeLocalStorage();
     const idsAPI = new Set(listaDatos.map(s => String(s.id)));
     mockData.evaluacion = [...listaDatos, ...desdeLS.filter(s => !idsAPI.has(String(s.id)))];
   };
 
+  // ─── Renderizar tabla ─────────────────────────────────────────────────────
   const renderSolicitudes = (tab) => {
     const content = document.getElementById(`${tab}-content`);
     content.innerHTML = '';
     const solicitudes = mockData[tab] || [];
-
-    if (solicitudes.length === 0) {
-      content.innerHTML = '<p>No hay solicitudes para mostrar.</p>';
-      return;
-    }
+    if (solicitudes.length === 0) { content.innerHTML = '<p>No hay solicitudes para mostrar.</p>'; return; }
 
     const tabla = document.createElement('table');
     tabla.className = 'solicitudes-table';
-
     const thead = document.createElement('thead');
-    thead.innerHTML = `
-      <tr>
-        <th>Cliente</th>
-        <th>Monto</th>
-        <th>Plazo</th>
-        <th>Tasa anual</th>
-        <th>Cuota mensual</th>
-        <th>Total a pagar</th>
-        <th>Qué conlleva</th>
-        <th>Puntaje</th>
-        <th>Acciones</th>
-      </tr>
-    `;
-
+    thead.innerHTML = `<tr><th>Cliente</th><th>Monto</th><th>Plazo</th><th>Tasa anual</th><th>Cuota mensual</th><th>Total a pagar</th><th>Qué conlleva</th><th>Puntaje</th><th>Acciones</th></tr>`;
     const tbody = document.createElement('tbody');
 
     solicitudes.forEach((solicitud) => {
       const fila = document.createElement('tr');
-
       const botones = tab === 'evaluacion'
-        ? `
-          <div class="actions">
-            <button class="btn btn-primary" data-id="${solicitud.id}" data-action="aprobar">Aprobar</button>
-            <button class="btn btn-secondary" data-id="${solicitud.id}" data-action="rechazar">Rechazar</button>
-          </div>
-        `
+        ? `<div class="actions"><button class="btn btn-primary" data-id="${solicitud.id}" data-action="aprobar">Aprobar</button><button class="btn btn-secondary" data-id="${solicitud.id}" data-action="rechazar">Rechazar</button></div>`
         : '<span class="table-muted">Sin acciones</span>';
-
       const puntaje = tab === 'evaluacion'
         ? `<div class="score-badge ${getScoreClass(solicitud.score)}">${solicitud.score}</div>`
         : '<span class="table-muted">-</span>';
-
-      const cuotaMensual = Number(solicitud.cuotaMensual)
-        || calcularCuotaMensualEstimada(solicitud.monto, solicitud.plazo, solicitud.tasaInteres);
+      const cuotaMensual = Number(solicitud.cuotaMensual) || calcularCuotaMensualEstimada(solicitud.monto, solicitud.plazo, solicitud.tasaInteres);
       const totalPagar = Number(solicitud.totalPagar) || (cuotaMensual * (Number(solicitud.plazo) || 0));
       const tasaMensual = (Number(solicitud.tasaInteres) || 0) / 12;
-
       fila.innerHTML = `
         <td data-label="Cliente">${solicitud.cliente}</td>
         <td data-label="Monto">${formatearMoneda(solicitud.monto)}</td>
@@ -218,7 +159,6 @@ document.addEventListener('DOMContentLoaded', () => {
         <td data-label="Puntaje">${puntaje}</td>
         <td data-label="Acciones">${botones}</td>
       `;
-
       tbody.appendChild(fila);
     });
 
@@ -227,57 +167,68 @@ document.addEventListener('DOMContentLoaded', () => {
     content.appendChild(tabla);
   };
 
+  // ─── Tabs ─────────────────────────────────────────────────────────────────
   const handleTabClick = async (tab) => {
     tabs.forEach(t => t.classList.remove('active'));
     document.querySelector(`[data-tab=${tab}]`).classList.add('active');
-
-    tabContents.forEach(content => {
-      content.classList.remove('active');
-    });
-
+    tabContents.forEach(content => content.classList.remove('active'));
     document.getElementById(tab).classList.add('active');
-
-    if (tab === 'evaluacion') {
-      await cargarSolicitudesEvaluacion();
-    }
-
-    if (tab === 'aprobadas') {
-      const estadoFresh = cargarEstadoGuardado();
-      mockData.aprobadas = estadoFresh?.aprobadas ?? [];
-    }
-
+    if (tab === 'evaluacion') await cargarSolicitudesEvaluacion();
+    if (tab === 'aprobadas') { const estadoFresh = cargarEstadoGuardado(); mockData.aprobadas = estadoFresh?.aprobadas ?? []; }
     renderSolicitudes(tab);
   };
 
-  tabs.forEach(tab => {
-    tab.addEventListener('click', async () => {
-      await handleTabClick(tab.dataset.tab);
-    });
-  });
+  tabs.forEach(tab => { tab.addEventListener('click', async () => { await handleTabClick(tab.dataset.tab); }); });
 
-  document.addEventListener('click', (e) => {
-    if (e.target.matches('[data-action="aprobar"]') || e.target.matches('[data-action="rechazar"]')) {
-      const idStr = String(e.target.dataset.id);
-      const accion = e.target.dataset.action;
+  // ─── ACCIÓN: Aprobar / Rechazar ────────────────────────────────────────────
+  document.addEventListener('click', async (e) => {
+    if (!e.target.matches('[data-action="aprobar"]') && !e.target.matches('[data-action="rechazar"]')) return;
 
+    const idStr  = String(e.target.dataset.id);
+    const accion = e.target.dataset.action;
+    const nuevoEstado = accion === 'aprobar' ? 'APROBADO' : 'RECHAZADO';
+
+    // Deshabilitar botones mientras se procesa
+    const fila = e.target.closest('tr');
+    if (fila) fila.querySelectorAll('button').forEach(b => b.disabled = true);
+
+    // 1. Llamar al backend primero
+    let backendOk = false;
+    try {
+      const resp = await fetch(`${API_BASE}/solicitudes/${idStr}/estado`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ estado: nuevoEstado })
+      });
+      const data = await resp.json();
+      if (resp.ok && data.ok) {
+        backendOk = true;
+      } else {
+        console.error('Respuesta error del backend:', data);
+        alert(`Error al ${accion}: ${data.error || data.detalle || resp.status}`);
+      }
+    } catch (fetchErr) {
+      console.error('No se pudo conectar al backend:', fetchErr);
+      alert('No se pudo conectar al backend. Verifica que el servidor esté corriendo en puerto 8080.');
+    }
+
+    // 2. Si el backend respondió OK (o si es localStorage-only), actualizar UI
+    if (backendOk) {
       const solicitud = mockData.evaluacion.find(s => String(s.id) === idStr);
       mockData.evaluacion = mockData.evaluacion.filter(s => String(s.id) !== idStr);
-
-      // Marcar como procesado (aprobado o rechazado no debe reaparecer)
       idsYaProcesados.add(idStr);
-
       if (accion === 'aprobar' && solicitud) {
         mockData['sin-firmar'].push(solicitud);
       }
-
-      // Persistir siempre (para que rechazados tampoco reaparezcan)
       guardarEstado();
-
       const activeTab = document.querySelector('.tab-button.active').dataset.tab;
       renderSolicitudes(activeTab);
+    } else {
+      // Rehabilitar botones si falló
+      if (fila) fila.querySelectorAll('button').forEach(b => b.disabled = false);
     }
   });
 
-  // Cargar la pestaña inicial
+  // Cargar tab inicial
   handleTabClick('evaluacion');
 });

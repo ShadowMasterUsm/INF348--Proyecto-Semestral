@@ -163,12 +163,14 @@ BEGIN
 END
 //
 
+/*
 CREATE TRIGGER trg_actualizar_monto_total_credito
 AFTER UPDATE ON credito
 FOR EACH ROW
 BEGIN
     CALL actualizar_monto_total(NEW.id_credito);
 END
+*/
 //
 
 DELIMITER ;
