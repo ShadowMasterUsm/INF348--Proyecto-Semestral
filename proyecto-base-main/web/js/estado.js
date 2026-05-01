@@ -29,6 +29,12 @@ const calcCuota = (monto, plazo, tasaAnual) => {
   return (p * tm) / (1 - Math.pow(1 + tm, -m));
 };
 
+const calcularScore = (monto, cuotas) => { 
+    const m = Number(monto) || 0; 
+    const c = Number(cuotas) || 1; 
+    return Math.max(5, Math.min(95, 100 - Math.round((m / 1000000) * 2 + c * 0.8))); 
+};
+
 // ─── Extraer RUTs únicos del localStorage ─────────────────────────────────────
 const obtenerRutsDesdeLocalStorage = () => {
   const enviadas = leerEnviadas();
@@ -80,6 +86,7 @@ function buildTabla(solicitudes, conFirmar = false) {
       (s.incluye_seguro_cesantia    || s.seguroCesantia)    ? 'Cesantía'    : null,
     ].filter(Boolean).join(', ') || '—';
 
+    const scoreCalculado = s.score || calcularScore(monto, plazo);
     const idFirma = String(s.id_credito || normId(s));
     const accion = conFirmar
       ? `<button class="btn-firmar" data-firma-id="${idFirma}">Firmar</button>`
@@ -93,6 +100,7 @@ function buildTabla(solicitudes, conFirmar = false) {
       <td data-label="Cuota estimada">${fmt(cuota)}</td>
       <td data-label="Total a pagar">${fmt(total)}</td>
       <td data-label="Seguros">${seguros}</td>
+      <td data-label="Prob. de aprobación"><span style="font-weight:bold; color: #2B4C7E;">${scoreCalculado}%</span></td>
       <td data-label="Acción">${accion}</td>
     </tr>`;
   }).join('');
@@ -100,7 +108,7 @@ function buildTabla(solicitudes, conFirmar = false) {
   return `<table class="est-table">
     <thead><tr>
       <th>RUT</th><th>Monto</th><th>Plazo</th><th>Tasa anual</th>
-      <th>Cuota estimada</th><th>Total a pagar</th><th>Seguros</th><th>Acción</th>
+      <th>Cuota estimada</th><th>Total a pagar</th><th>Seguros</th><th>Prob. de Aprobación</th><th>Acción</th>
     </tr></thead>
     <tbody>${filas}</tbody>
   </table>`;

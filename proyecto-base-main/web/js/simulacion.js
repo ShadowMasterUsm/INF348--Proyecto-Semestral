@@ -321,7 +321,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     mostrarPaso(pasoActual);
 
-
     if (btnSimulacion) {
         btnSimulacion.addEventListener("click", (e) => {
             e.preventDefault();
@@ -333,17 +332,21 @@ document.addEventListener("DOMContentLoaded", () => {
                 rutValue = "11.111.111-1";
             }
 
+            const montoIngresado = parseInt(document.getElementById("monto").value.replace(/\D/g, ""));
+            const cuotasIngresadas = parseInt(document.getElementById("cuotas").value);
+
             const data = {
                 tipoCredito: document.getElementById("tipo-credito").value,
                 rut: rutValue,
                 renta: document.getElementById("renta").value || "C",
-                monto: parseInt(document.getElementById("monto").value.replace(/\D/g, "")),
-                cuotas: parseInt(document.getElementById("cuotas").value),
+                monto: montoIngresado, // Asignar la variable
+                cuotas: cuotasIngresadas, // Asignar la variable
                 tasa_interes_anual: 12.5,
                 mesInicio: document.getElementById("mes-pago").value,
                 diaPago: document.getElementById("dia-pago").value,
                 seguroCesantia: document.getElementById("seguroCesantia").checked,
-                seguroDesgravamen: document.getElementById("seguroDesgravamen").checked
+                seguroDesgravamen: document.getElementById("seguroDesgravamen").checked,
+                score: calcularScore(montoIngresado, cuotasIngresadas) // Calcular con las variables
             };
 
             enviarSimulacion(data);
@@ -360,18 +363,23 @@ document.addEventListener("DOMContentLoaded", () => {
             if (tieneDocumento && !rutValue.trim()) {
                 rutValue = "11.111.111-1";
             }
+           
+            
+            const montoIngresado = parseInt(document.getElementById("monto").value.replace(/\D/g, ""));
+            const cuotasIngresadas = parseInt(document.getElementById("cuotas").value);
 
             const data = {
                 tipoCredito: document.getElementById("tipo-credito").value,
                 rut: rutValue,
                 renta: document.getElementById("renta").value || "C",
-                monto: parseInt(document.getElementById("monto").value.replace(/\D/g, "")),
-                cuotas: parseInt(document.getElementById("cuotas").value),
+                monto: montoIngresado,
+                cuotas: cuotasIngresadas,
                 tasa_interes_anual: 12.5,
                 mesInicio: document.getElementById("mes-pago").value,
                 diaPago: document.getElementById("dia-pago").value,
                 seguroCesantia: document.getElementById("seguroCesantia").checked,
-                seguroDesgravamen: document.getElementById("seguroDesgravamen").checked
+                seguroDesgravamen: document.getElementById("seguroDesgravamen").checked,
+                score: calcularScore(montoIngresado, cuotasIngresadas) // Calcular con las variables
             };
 
             enviarSolicitud(data);
@@ -408,6 +416,7 @@ async function enviarSolicitud(data) {
             // API respondió con error → guardar igual en local para que aparezca como pendiente
             guardarSolicitudLocal(data);
             alert("Solicitud enviada (pendiente de revisión).");
+            window.location.href = "Estado.html";
             return;
         }
 
@@ -415,17 +424,28 @@ async function enviarSolicitud(data) {
         const idServidor = result.id_credito || result.id_solicitud || result.id || result.id_simulacion;
         guardarSolicitudLocal(data, idServidor);
         alert("Solicitud de crédito enviada correctamente al analista.");
+        window.location.href = "Estado.html";
 
     } catch (error) {
         // API no disponible → guardar en local de todas formas
         console.warn("API no disponible, guardando solicitud en local:", error.message);
         guardarSolicitudLocal(data);
         alert("Solicitud enviada correctamente.");
+        window.location.href = "Estado.html";
     }
 }
 
+const calcularScore = (monto, cuotas) => { 
+    const m = Number(monto) || 0; 
+    const c = Number(cuotas) || 1; 
+    return Math.max(5, Math.min(95, 100 - Math.round((m / 1000000) * 2 + c * 0.8))); 
+};
+
 function mostrarResumen(data) {
     const main = document.querySelector("main");
+    
+    // Calculamos el score aquí en caso de que la API (backend) no lo devuelva
+    const scoreCalculado = data.score || calcularScore(data.monto, data.cuotas);
 
     main.innerHTML = `
         <section class="hero">
@@ -435,11 +455,13 @@ function mostrarResumen(data) {
         <section style="max-width: 800px; margin: 40px auto; background: white; padding: 30px; border-radius: 10px;">
             <h2>Detalle del crédito</h2>
 
-            <p><strong>Monto solicitado:</strong> $${data.monto.toLocaleString("es-CL")}</p>
-            <p><strong>Monto total:</strong> $${data.monto_total?.toLocaleString("es-CL") || "No disponible"}</p>
-            <p><strong>Monto cuota:</strong> $${data.monto_cuota?.toLocaleString("es-CL") || "No disponible"}</p>
+            <p><strong>Monto solicitado:</strong> $${Number(data.monto).toLocaleString("es-CL")}</p>
+            <p><strong>Monto total:</strong> $${Number(data.monto_total || 0).toLocaleString("es-CL")}</p>
+            <p><strong>Monto cuota:</strong> $${Number(data.monto_cuota || 0).toLocaleString("es-CL")}</p>
             <p><strong>Número de cuotas:</strong> ${data.cuotas}</p>
             <p><strong>Tasa de interés anual:</strong> ${data.tasa_interes_anual}%</p>
+            <p><strong>Probabilidad de aprobación:</strong> <span style="font-weight:bold; color: #2B4C7E;">${scoreCalculado}%</span></p>
+            
 
             <div style="margin-top: 30px;">
                 <button onclick="window.location.href='index.html'" 
