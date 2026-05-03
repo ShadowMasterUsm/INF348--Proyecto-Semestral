@@ -8,8 +8,7 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: password
     volumes:
-      - ./API_EJEMPLO/init:/docker-entrypoint-initdb.d
-      - ./API_TRAMITACION/init:/docker-entrypoint-initdb.d
+      - ./mysql-init:/docker-entrypoint-initdb.d
 
 # Contenedor para la API de ejemplo
 #  api_ejemplo:

@@ -296,31 +296,34 @@ document.addEventListener("DOMContentLoaded", () => {
     mostrarPaso(pasoActual);
 
 
-    document.querySelector(".ver-simulacion").addEventListener("click", () => {
-        let rutValue = document.getElementById("rut").value;
-        const documento = document.getElementById("documento");
-        const tieneDocumento = documento && documento.files.length > 0;
+    const verSimBtn = document.querySelector(".ver-simulacion");
+    if (verSimBtn) {
+        verSimBtn.addEventListener("click", () => {
+            let rutValue = document.getElementById("rut").value;
+            const documento = document.getElementById("documento");
+            const tieneDocumento = documento && documento.files.length > 0;
 
-        // Si se subió un documento y ademas se dejó el RUT vacío, usamos uno artificial para que la API no falle
-        if (tieneDocumento && !rutValue.trim()) {
-            rutValue = "11.111.111-1";
-        }
+            // Si se subió un documento y ademas se dejó el RUT vacío, usamos uno artificial para que la API no falle
+            if (tieneDocumento && !rutValue.trim()) {
+                rutValue = "11.111.111-1";
+            }
 
-        const data = {
-            tipoCredito: document.getElementById("tipo-credito").value,
-            rut: rutValue,
-            renta: document.getElementById("renta").value || "C", // Valor por defecto si no lo llenó
-            monto: parseInt(document.getElementById("monto").value.replace(/\D/g, "")),
-            cuotas: parseInt(document.getElementById("cuotas").value),
-            tasa_interes_anual: 12.5,
-            mesInicio: document.getElementById("mes-pago").value,
-            diaPago: document.getElementById("dia-pago").value,
-            seguroCesantia: document.getElementById("seguroCesantia").checked,
-            seguroDesgravamen: document.getElementById("seguroDesgravamen").checked
-        };
+            const data = {
+                tipoCredito: document.getElementById("tipo-credito").value,
+                rut: rutValue,
+                renta: document.getElementById("renta").value || "C",
+                monto: parseInt(document.getElementById("monto").value.replace(/\D/g, "")),
+                cuotas: parseInt(document.getElementById("cuotas").value),
+                tasa_interes_anual: 12.5,
+                mesInicio: document.getElementById("mes-pago").value,
+                diaPago: document.getElementById("dia-pago").value,
+                seguroCesantia: document.getElementById("seguroCesantia").checked,
+                seguroDesgravamen: document.getElementById("seguroDesgravamen").checked
+            };
 
-        enviarSimulacion(data);
-    });
+            enviarSimulacion(data);
+        });
+    }
 });
 
 async function enviarSimulacion(data) {
