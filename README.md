@@ -23,13 +23,6 @@ Luego, el nuevo punto de mejora es tener la capacidad de extraer los datos desde
 * [Video presentación cliente](https://aula.usm.cl/pluginfile.php/7621199/mod_resource/content/2/video1352931478.mp4)
 * [Video Prototipo proyecto](https://youtu.be/TjyuEVveL78)
 
-## Aspectos técnicos relevantes
-
-- Se incorporo una nueva Historias de Usuario en el repositorio:  
-  - HU006: 
-- Avannzamos el codigo en lo posible.
-- Concluimos sobre nuestro proyecto en la wiki en la seccion de Resultados Finales.
-
 ## Para levantar el proyecto
 
 * Paso 1: Descargar el archivo proyecto-base-main.zip y descomprimirlo.
