@@ -81,4 +81,11 @@ document.addEventListener("DOMContentLoaded", () => {
             window.location.href = "analista_riesgo.html";
         });
     }
+
+    const pagosbtn = document.getElementById("pagosbtn");
+    if (pagosbtn) {
+        pagosbtn.addEventListener("click", () => {
+            window.location.href = "pagos.html";
+        });
+    }
 });
