@@ -17,4 +17,12 @@ router.get('/solicitudes', index.obtenerSolicitudes);
 router.put('/solicitudes/:id/estado', index.actualizarEstadoSolicitud);
 router.get('/creditos', index.obtenerCreditosPorRut);
 
+// Validación y registro de cliente por RUT
+router.get('/cliente/validar',    index.validarCliente);
+router.post('/cliente/registrar', index.registrarCliente);
+
+// Pagos de cuotas
+router.post('/pagos', index.registrarPago);
+router.get('/pagos/:id_credito', index.obtenerPagosPorCredito);
+
 module.exports = router;

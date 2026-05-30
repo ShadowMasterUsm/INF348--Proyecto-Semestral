@@ -119,6 +119,15 @@ CREATE TABLE IF NOT EXISTS simulacion (
     FOREIGN KEY (id_tipo_credito) REFERENCES tipo_credito(id_tipo_credito)
 );
 
+CREATE TABLE IF NOT EXISTS pago_cuota (
+    id_pago        INT AUTO_INCREMENT PRIMARY KEY,
+    id_credito     INT NOT NULL,
+    numero_cuota   INT NOT NULL,
+    monto_pagado   DECIMAL(15,2) NOT NULL,
+    fecha_pago     DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_pago_cuota (id_credito, numero_cuota),
+    FOREIGN KEY (id_credito) REFERENCES credito(id_credito) ON DELETE CASCADE
+);
 -- ========================================
 -- TRIGGERS
 -- ========================================

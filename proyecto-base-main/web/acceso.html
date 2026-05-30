@@ -4,62 +4,9 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>ClaroFin - Acceso</title>
-
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #f2f2f2;
-            margin: 0;
-        }
-        .navbar {
-            background-color: #0073e6;
-            padding: 10px 20px;
-        }
-        .nav-container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-        .brand .logo {
-            height: 40px;
-        }
-        main {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: calc(100vh - 60px);
-        }
-        .login-container {
-            background: #fff;
-            padding: 30px 40px;
-            border-radius: 8px;
-            box-shadow: 0 6px 12px rgba(0,0,0,0.1);
-            display: flex;
-            gap: 20px;
-        }
-        .btn {
-            font-size: 1.1rem;
-            padding: 12px 25px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            background-color: #ccc;
-            color: #333;
-            transition: background-color 0.3s ease;
-        }
-        .btn:hover {
-            background-color: #bbb;
-        }
-        .btn.primary {
-            background-color: #0073e6;
-            color: white;
-        }
-        .btn.primary:hover {
-            background-color: #005bb5;
-        }
-    </style>
-
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/acceso.css">
     <script defer src="js/navbar.js"></script>
-    <script defer src="js/main.js"></script>
 </head>
 
 <body>
@@ -72,10 +19,124 @@
     </header>
 
     <main>
-        <div class="login-container">
-            <button class="btn" id="analistaBtn">SOY ANALISTA</button>
-            <button class="btn primary" id="clienteBtn">SOY CLIENTE</button>
+
+        <!-- Panel 1: selección de rol -->
+        <div class="acceso-card rol-selector" id="panelRol">
+            <h2>Bienvenido a ClaroFin</h2>
+            <p>¿Cómo deseas ingresar?</p>
+            <div class="rol-btns">
+                <button class="btn-rol" id="analistaBtn">SOY ANALISTA</button>
+                <button class="btn-rol primary" id="clienteBtn">SOY CLIENTE</button>
+            </div>
         </div>
+
+        <!-- Panel 2: login cliente con RUT -->
+        <div class="acceso-card login-cliente" id="panelLogin">
+            <h2>Acceso de cliente</h2>
+            <p class="sub">Ingresa tu RUT para consultar tus créditos y pagos.</p>
+
+            <div class="alerta-noreg" id="alertaNoReg">
+                <strong>RUT no registrado</strong>
+                Este RUT no existe en el sistema.
+                <a href="#" id="linkRegistrar">Regístrate aquí</a>.
+            </div>
+
+            <div class="form-group">
+                <label for="inputRut">RUT</label>
+                <input type="text" id="inputRut" placeholder="Ej: 12345678-9" maxlength="12" autocomplete="off" />
+                <span class="rut-hint">Sin puntos, con guión · Ej: 12345678-9</span>
+                <span class="error-msg" id="rutError">Ingresa un RUT con formato válido (ej: 12345678-9)</span>
+            </div>
+
+            <div class="form-group">
+                <label for="inputPassword">Contraseña</label>
+                <input type="password" id="inputPassword" placeholder="Ingresa tu contraseña" maxlength="50" autocomplete="current-password" />
+                <span class="error-msg" id="passwordError">Ingresa tu contraseña</span>
+            </div>
+
+            <button class="btn-ingresar" id="ingresarBtn">
+                <span id="btnLabel">Ingresar</span>
+                <span class="spinner" id="spinner"></span>
+            </button>
+
+            <div class="acceso-footer">
+                ¿No tienes cuenta? <a href="#" id="linkIrRegistro">Regístrate</a>
+            </div>
+
+            <span class="volver-link" id="volverDesdeLogin">← Volver</span>
+        </div>
+
+        <!-- Panel 3: registro de nuevo cliente -->
+        <div class="acceso-card registro-cliente" id="panelRegistro">
+            <h2>Crear cuenta</h2>
+            <p class="sub">Completa tus datos para registrarte en ClaroFin.</p>
+
+            <div class="alerta-exito" id="alertaExito">
+                <strong>¡Cuenta creada!</strong>
+                Tu registro fue exitoso. Ahora puedes ingresar con tu RUT.
+            </div>
+
+            <div class="alerta-error-reg" id="alertaErrorReg"></div>
+
+            <div class="form-grid-reg">
+                <div class="form-group">
+                    <label for="regRut">RUT</label>
+                    <input type="text" id="regRut" placeholder="Ej: 12345678-9" maxlength="12" autocomplete="off" />
+                    <span class="rut-hint">Sin puntos, con guión · Ej: 12345678-9</span>
+                    <span class="error-msg" id="regRutError">RUT con formato inválido</span>
+                </div>
+
+                <div class="form-group">
+                    <label for="regNombre">Nombre</label>
+                    <input type="text" id="regNombre" placeholder="Ej: Juan" maxlength="50" />
+                    <span class="error-msg" id="regNombreError">Ingresa tu nombre</span>
+                </div>
+
+                <div class="form-group">
+                    <label for="regApellido">Apellido</label>
+                    <input type="text" id="regApellido" placeholder="Ej: Pérez" maxlength="50" />
+                    <span class="error-msg" id="regApellidoError">Ingresa tu apellido</span>
+                </div>
+
+                <div class="form-group">
+                    <label for="regTelefono">Teléfono</label>
+                    <input type="text" id="regTelefono" placeholder="Ej: +56912345678" maxlength="15" />
+                    <span class="error-msg" id="regTelefonoError">Ingresa un teléfono válido</span>
+                </div>
+
+                <div class="form-group form-group--full">
+                    <label for="regCorreo">Correo electrónico</label>
+                    <input type="email" id="regCorreo" placeholder="Ej: juan@correo.com" maxlength="50" />
+                    <span class="error-msg" id="regCorreoError">Ingresa un correo válido</span>
+                </div>
+
+                <div class="form-group">
+                    <label for="regPassword">Contraseña</label>
+                    <input type="password" id="regPassword" placeholder="Mínimo 6 caracteres" maxlength="50" />
+                    <span class="error-msg" id="regPasswordError">La contraseña debe tener al menos 6 caracteres</span>
+                </div>
+
+                <div class="form-group">
+                    <label for="regPasswordConfirm">Confirmar contraseña</label>
+                    <input type="password" id="regPasswordConfirm" placeholder="Repite tu contraseña" maxlength="50" />
+                    <span class="error-msg" id="regPasswordConfirmError">Las contraseñas no coinciden</span>
+                </div>
+            </div>
+
+            <button class="btn-ingresar" id="registrarBtn">
+                <span id="regBtnLabel">Crear cuenta</span>
+                <span class="spinner" id="regSpinner"></span>
+            </button>
+
+            <div class="acceso-footer">
+                ¿Ya tienes cuenta? <a href="#" id="linkIrLogin">Ingresar</a>
+            </div>
+
+            <span class="volver-link" id="volverDesdeRegistro">← Volver</span>
+        </div>
+
     </main>
+
+    <script src="js/acceso.js" defer></script>
 </body>
 </html>

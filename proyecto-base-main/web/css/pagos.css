@@ -1,85 +1,190 @@
-.row {
-  display: -ms-flexbox; /* IE10 */
-  display: flex;
-  -ms-flex-wrap: wrap; /* IE10 */
-  flex-wrap: wrap;
-  margin: 0 -16px;
+/* ── Layout ── */
+body { background: #f5f7fa; }
+
+.pagos-wrapper {
+    max-width: 960px;
+    margin: 40px auto;
+    padding: 0 24px 80px;
+}
+.pagos-wrapper h1 { font-size: 1.7rem; color: #1a1a2e; margin-bottom: 4px; }
+.pagos-wrapper .subtitulo { color: #777; font-size: 0.92rem; margin-bottom: 28px; }
+.cargando { color: #888; font-size: 0.9rem; padding: 20px 0; }
+
+/* ── Tarjeta ── */
+.credito-card {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+    margin-bottom: 24px;
+    overflow: hidden;
 }
 
-.col-25 {
-  -ms-flex: 25%; /* IE10 */
-  flex: 25%;
+.credito-header {
+    background: #f0f6ff;
+    padding: 16px 22px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #e4eaf5;
+    flex-wrap: wrap;
+    gap: 8px;
 }
+.credito-titulo { display: block; font-size: 1rem; font-weight: 700; color: #1a1a2e; }
+.credito-rut    { display: block; font-size: 0.8rem; color: #777; margin-top: 2px; }
+.credito-nums   { display: flex; flex-direction: column; align-items: flex-end; gap: 2px;
+                  font-size: 0.85rem; color: #555; font-weight: 600; }
 
-.col-50 {
-  -ms-flex: 50%; /* IE10 */
-  flex: 50%;
+/* ── Progreso ── */
+.progreso-wrap { padding: 16px 22px 8px; }
+.prog-labels   { display: flex; justify-content: space-between; font-size: 0.8rem; color: #666; margin-bottom: 6px; }
+.prog-bar      { height: 8px; background: #e8edf5; border-radius: 99px; overflow: hidden; }
+.prog-fill     { height: 100%; background: linear-gradient(90deg, #2b4c7e, #567ebb); border-radius: 99px; transition: width .4s; }
+
+/* ── Deuda ── */
+.deuda-pendiente {
+    padding: 8px 22px 14px;
+    font-size: 0.85rem;
+    color: #444;
+    border-bottom: 1px solid #f0f0f0;
 }
+.credito-pagado { color: #1d7a45; font-weight: 700; }
 
-.col-75 {
-  -ms-flex: 75%; /* IE10 */
-  flex: 75%;
+/* ── Tabla cuotas ── */
+.cuotas-wrap { padding: 0; }
+
+.cuotas-tabla {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
 }
-
-.col-25,
-.col-50,
-.col-75 {
-  padding: 0 16px;
+.cuotas-tabla thead tr { background: #f8f9fc; }
+.cuotas-tabla th {
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 700;
+    color: #555;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    border-bottom: 2px solid #eaeef6;
 }
+.cuotas-tabla td { padding: 11px 14px; border-bottom: 1px solid #f0f0f0; color: #333; }
+.cuotas-tabla tbody tr:last-child td { border-bottom: none; }
 
-.container {
-  background-color: #f2f2f2;
-  padding: 5px 20px 15px 20px;
-  border: 1px solid lightgrey;
-  border-radius: 3px;
+/* filas por estado */
+.fila-cuota.pagada   { background: #f7fdf7; color: #aaa; }
+.fila-cuota.vencida  { background: #fff8f5; }
+.fila-cuota.hoy      { background: #fffbe6; }
+.fila-cuota.corresponde:not(.pagada) { font-weight: 600; }
+
+/* ── Badges cuota ── */
+.badge-cuota {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 700;
 }
+.badge-cuota.pagada   { background: #e6f9ee; color: #1d7a45; }
+.badge-cuota.vencida  { background: #fff0ec; color: #c0392b; }
+.badge-cuota.hoy      { background: #fff8dc; color: #9a6700; }
+.badge-cuota.proxima  { background: #eef3ff; color: #2b4c7e; }
+.badge-cuota.futura   { background: #f2f2f2; color: #888; }
 
-input[type=text] {
-  width: 100%;
-  margin-bottom: 20px;
-  padding: 12px;
-  border: 1px solid #ccc;
-  border-radius: 3px;
+/* ── Checkboxes ── */
+.chk-cuota {
+    width: 17px; height: 17px;
+    accent-color: #2b4c7e;
+    cursor: pointer;
 }
+.chk-todos { width: 15px; height: 15px; accent-color: #2b4c7e; cursor: pointer; }
+.chk-todos-label { display: flex; align-items: center; gap: 6px; font-weight: 700;
+                   font-size: 0.78rem; color: #555; cursor: pointer; }
+.check-ok { color: #1d7a45; font-weight: 700; }
 
-label {
-  margin-bottom: 10px;
-  display: block;
+/* ── Barra inferior de pago ── */
+.pagar-seleccion-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 22px;
+    border-top: 1px solid #f0f0f0;
+    background: #fafbff;
+    flex-wrap: wrap;
+    gap: 10px;
 }
-
-.icon-container {
-  margin-bottom: 20px;
-  padding: 7px 0;
-  font-size: 24px;
+.seleccion-info { font-size: 0.85rem; color: #555; }
+.btn-pagar-sel {
+    background: #2b4c7e;
+    color: #fff;
+    border: none;
+    padding: 9px 22px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background .2s;
 }
+.btn-pagar-sel:hover:not(:disabled) { background: #1a3459; }
+.btn-pagar-sel:disabled { background: #c0c8d8; cursor: default; }
 
-.btn {
-  background-color: #04AA6D;
-  color: white;
-  padding: 12px;
-  margin: 10px 0;
-  border: none;
-  width: 100%;
-  border-radius: 3px;
-  cursor: pointer;
-  font-size: 17px;
+/* ── Empty state ── */
+.empty-state { text-align: center; padding: 60px 20px; color: #888; }
+.empty-icon  { font-size: 3rem; margin-bottom: 12px; }
+.empty-hint  { font-size: 0.82rem; margin-top: 8px; }
+.empty-hint a { color: #2b4c7e; }
+
+/* ── Modal ── */
+.modal-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.45);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
 }
-
-.btn:hover {
-  background-color: #45a049;
+.modal-overlay.visible { display: flex; }
+.modal-box {
+    background: #fff;
+    border-radius: 14px;
+    padding: 36px 32px 28px;
+    max-width: 420px;
+    width: 90%;
+    text-align: center;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.18);
 }
-
-span.price {
-  float: right;
-  color: grey;
+.modal-icon { font-size: 2.4rem; margin-bottom: 10px; }
+.modal-box h3 { font-size: 1.15rem; color: #1a1a2e; margin-bottom: 14px; }
+.modal-box p  { color: #555; font-size: 0.88rem; line-height: 1.7; }
+.modal-total  { font-size: 1rem; font-weight: 700; color: #2b4c7e; }
+.modal-actions { display: flex; gap: 12px; justify-content: center; margin-top: 22px; }
+.modal-btn-cancel {
+    background: #f0f0f0; color: #555; border: none;
+    padding: 10px 24px; border-radius: 20px; font-size: 0.88rem; font-weight: 600; cursor: pointer;
 }
+.modal-btn-confirm {
+    background: #2b4c7e; color: #fff; border: none;
+    padding: 10px 24px; border-radius: 20px; font-size: 0.88rem; font-weight: 700; cursor: pointer;
+}
+.modal-btn-confirm:hover { background: #1a3459; }
 
-/* Responsive layout - when the screen is less than 800px wide, make the two columns stack on top of each other instead of next to each other (and change the direction - make the "cart" column go on top) */
-@media (max-width: 800px) {
-  .row {
-    flex-direction: column-reverse;
-  }
-  .col-25 {
-    margin-bottom: 20px;
-  }
+/* ── Toast ── */
+.toast {
+    position: fixed; bottom: 28px; left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: #1d7a45; color: #fff;
+    padding: 12px 26px; border-radius: 30px;
+    font-size: 0.88rem; font-weight: 600;
+    opacity: 0; pointer-events: none;
+    transition: opacity .3s, transform .3s;
+    z-index: 2000; white-space: nowrap;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ── Responsive ── */
+@media (max-width: 600px) {
+    .credito-header { flex-direction: column; align-items: flex-start; }
+    .credito-nums   { align-items: flex-start; }
+    .cuotas-tabla th:nth-child(2), .cuotas-tabla td:nth-child(2) { display: none; }
+    .cuotas-tabla th, .cuotas-tabla td { padding: 9px 10px; }
 }

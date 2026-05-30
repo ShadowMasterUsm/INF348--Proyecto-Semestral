@@ -250,6 +250,160 @@ const obtenerCreditosPorRut = async (req, res) => {
     }
 };
 
+// ─── Registrar nuevo cliente ──────────────────────────────────────────────────
+const registrarCliente = async (req, res) => {
+    const promiseDb = database.promise();
+    try {
+        const { rut, nombre, apellido, telefono, correo } = req.body;
+
+        if (!rut || !nombre || !apellido || !telefono || !correo) {
+            return res.status(400).json({ ok: false, error: 'Faltan campos obligatorios: rut, nombre, apellido, telefono, correo' });
+        }
+
+        // Asegurarse de que región y comuna por defecto existan
+        await promiseDb.query("INSERT IGNORE INTO region (id_region, nombre) VALUES (1, 'Región Metropolitana')");
+        await promiseDb.query("INSERT IGNORE INTO comuna (id_comuna, id_region, nombre) VALUES (1, 1, 'Santiago')");
+
+        const [result] = await promiseDb.query(
+            'INSERT INTO cliente (id_region, id_comuna, rut, nombre, apellido, telefono, correo) VALUES (1, 1, ?, ?, ?, ?, ?)',
+            [rut.trim(), nombre.trim(), apellido.trim(), telefono.trim(), correo.trim()]
+        );
+
+        return res.status(201).json({
+            ok: true,
+            mensaje: 'Cliente registrado correctamente',
+            id_cliente: result.insertId
+        });
+    } catch (error) {
+        // Duplicate entry = RUT ya registrado
+        if (error.code === 'ER_DUP_ENTRY') {
+            return res.status(409).json({ ok: false, error: 'Este RUT ya está registrado. Inicia sesión directamente.' });
+        }
+        // Trigger de correo inválido
+        if (error.sqlState === '45000') {
+            return res.status(400).json({ ok: false, error: error.message });
+        }
+        console.error('Error al registrar cliente:', error);
+        return res.status(500).json({ ok: false, error: 'Error interno al registrar', detalle: error.message });
+    }
+};
+
+// ─── Validar si un RUT existe como cliente en la BD ──────────────────────────
+const validarCliente = async (req, res) => {
+    const promiseDb = database.promise();
+    try {
+        const { rut } = req.query;
+        if (!rut) return res.status(400).json({ ok: false, error: 'Falta el parámetro rut' });
+
+        const [rows] = await promiseDb.query(
+            'SELECT id_cliente, rut, nombre, apellido FROM cliente WHERE rut = ? LIMIT 1',
+            [rut.trim()]
+        );
+
+        if (rows.length === 0) {
+            return res.status(404).json({ ok: false, existe: false, error: 'RUT no encontrado' });
+        }
+
+        return res.status(200).json({
+            ok: true,
+            existe: true,
+            cliente: { id: rows[0].id_cliente, rut: rows[0].rut, nombre: rows[0].nombre, apellido: rows[0].apellido }
+        });
+    } catch (error) {
+        console.error('Error al validar cliente:', error);
+        return res.status(500).json({ ok: false, error: 'Error interno', detalle: error.message });
+    }
+};
+
+// ─── Registrar pago de una o más cuotas ──────────────────────────────────────
+const registrarPago = async (req, res) => {
+    const promiseDb = database.promise();
+    try {
+        const { id_credito, cuotas } = req.body;
+        // cuotas: [{ numero_cuota, monto_pagado }, ...]
+
+        if (!id_credito || !Array.isArray(cuotas) || cuotas.length === 0) {
+            return res.status(400).json({ ok: false, error: 'Faltan campos: id_credito y cuotas[]' });
+        }
+
+        // Verificar que el crédito existe y está APROBADO
+        const [creds] = await promiseDb.query(
+            'SELECT id_credito, numero_cuotas, estado FROM credito WHERE id_credito = ?',
+            [id_credito]
+        );
+        if (creds.length === 0) {
+            return res.status(404).json({ ok: false, error: 'Crédito no encontrado' });
+        }
+        if (creds[0].estado !== 'APROBADO') {
+            return res.status(400).json({ ok: false, error: `El crédito no está en estado APROBADO (estado actual: ${creds[0].estado})` });
+        }
+
+        const totalCuotas = creds[0].numero_cuotas;
+        const registrados = [];
+        const errores     = [];
+
+        for (const c of cuotas) {
+            const num   = Number(c.numero_cuota);
+            const monto = Number(c.monto_pagado);
+            if (!num || num < 1 || num > totalCuotas || !monto || monto <= 0) {
+                errores.push(`Cuota ${num} inválida`);
+                continue;
+            }
+            try {
+                await promiseDb.query(
+                    'INSERT INTO pago_cuota (id_credito, numero_cuota, monto_pagado) VALUES (?, ?, ?)',
+                    [id_credito, num, monto]
+                );
+                registrados.push(num);
+            } catch (e) {
+                // Duplicate entry = ya estaba pagada
+                errores.push(`Cuota ${num} ya registrada`);
+            }
+        }
+
+        // Verificar si todas las cuotas están pagadas → marcar crédito como PAGADO
+        const [pagadas] = await promiseDb.query(
+            'SELECT COUNT(*) as total FROM pago_cuota WHERE id_credito = ?',
+            [id_credito]
+        );
+        if (pagadas[0].total >= totalCuotas) {
+            await promiseDb.query(
+                "UPDATE credito SET estado = 'PAGADO' WHERE id_credito = ?",
+                [id_credito]
+            );
+            await promiseDb.query(
+                "UPDATE tramite SET etapa = 'FINALIZADO' WHERE id_credito = ?",
+                [id_credito]
+            );
+        }
+
+        return res.status(200).json({
+            ok: true,
+            registrados,
+            errores,
+            mensaje: `${registrados.length} cuota(s) registrada(s)${errores.length ? `, ${errores.length} error(es)` : ''}`
+        });
+    } catch (error) {
+        console.error('Error al registrar pago:', error);
+        return res.status(500).json({ ok: false, error: 'Error interno', detalle: error.message });
+    }
+};
+
+// ─── Obtener pagos registrados de un crédito ──────────────────────────────────
+const obtenerPagosPorCredito = async (req, res) => {
+    const promiseDb = database.promise();
+    try {
+        const { id_credito } = req.params;
+        const [rows] = await promiseDb.query(
+            'SELECT numero_cuota, monto_pagado, fecha_pago FROM pago_cuota WHERE id_credito = ? ORDER BY numero_cuota',
+            [id_credito]
+        );
+        return res.status(200).json({ ok: true, total: rows.length, data: rows });
+    } catch (error) {
+        return res.status(500).json({ ok: false, error: 'Error interno', detalle: error.message });
+    }
+};
+
 module.exports = {
     createTable,
     crearSimulacion,
@@ -258,7 +412,11 @@ module.exports = {
     crearSolicitud,
     obtenerSolicitudes,
     actualizarEstadoSolicitud,
-    obtenerCreditosPorRut
+    obtenerCreditosPorRut,
+    validarCliente,
+    registrarCliente,
+    registrarPago,
+    obtenerPagosPorCredito
 };
 
 

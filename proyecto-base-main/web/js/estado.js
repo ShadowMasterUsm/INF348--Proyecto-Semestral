@@ -21,6 +21,13 @@ const normId = (s) => String(s.id_credito || s.id_solicitud || s.id || s.id_simu
 const fmt     = (n) => `$${Number(n || 0).toLocaleString('es-CL')}`;
 const fmtTasa = (n) => `${Number(n || 0).toFixed(1)}%`;
 
+// MySQL DATE puede llegar como "2026-07-16T03:00:00.000Z" — extraer solo YYYY-MM-DD
+const normFecha = (val) => {
+  if (!val) return '—';
+  const s = typeof val === 'string' ? val : val instanceof Date ? val.toISOString() : String(val);
+  return s.slice(0, 10);
+};
+
 const calcCuota = (monto, plazo, tasaAnual) => {
   const p = Number(monto) || 0; const m = Number(plazo) || 0; const ta = Number(tasaAnual) || 0;
   if (m <= 0) return 0;

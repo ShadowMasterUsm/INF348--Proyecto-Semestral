@@ -11,64 +11,65 @@ if (btnSimular) {
 if (btnSolicitar) {
   btnSolicitar.addEventListener('click', () => {
     if (localStorage.getItem("loggedIn") === "true") {
-      // Usuario con sesión → puede solicitar
       window.location.href = "simulacion.html?mode=solicitar";
     } else {
-      // Usuario sin sesión → enviarlo a iniciar sesión
-      window.location.href = "acceso.html";
+      window.location.href = "acceso.html?redirect=" + encodeURIComponent("simulacion.html?mode=solicitar");
     }
   });
 }
 
-// ========= SESIÓN EN INDEX.HTML =========
+// ========= SESIÓN =========
 
 document.addEventListener("DOMContentLoaded", () => {
-    const accesoBtn = document.getElementById("accesoBtn");
+    const accesoBtn   = document.getElementById("accesoBtn");
     const profileMenu = document.getElementById("profileMenu");
-    const profileBtn = document.getElementById("profileBtn");
+    const profileBtn  = document.getElementById("profileBtn");
     const dropdownMenu = document.getElementById("dropdownMenu");
-    const logoutBtn = document.getElementById("logoutBtn");
+    const logoutBtn   = document.getElementById("logoutBtn");
 
-    // Si estamos en una página que NO tiene estos elementos, no seguir
+    const loggedIn  = localStorage.getItem("loggedIn") === "true";
+    const userRole  = localStorage.getItem("userRole") || "cliente";
+    const clienteRut = localStorage.getItem("clienteRut") || "";
+
+    // Mostrar RUT del cliente en la imagen de perfil como tooltip / aria-label
+    if (loggedIn && profileBtn && clienteRut) {
+        profileBtn.title = `RUT: ${clienteRut}`;
+    }
+
     if (accesoBtn) {
-        // Si hay sesión
-        if (localStorage.getItem("loggedIn") === "true") {
+        if (loggedIn) {
             accesoBtn.style.display = "none";
-            profileMenu.style.display = "flex";
+            if (profileMenu) profileMenu.style.display = "flex";
         } else {
             accesoBtn.style.display = "block";
-            profileMenu.style.display = "none";
+            if (profileMenu) profileMenu.style.display = "none";
         }
     }
 
-    // Abrir menú del icono
+    // Abrir/cerrar menú del icono de perfil
     if (profileBtn) {
         profileBtn.addEventListener("click", () => {
             dropdownMenu.classList.toggle("show");
         });
+        // Cerrar al hacer click fuera
+        document.addEventListener("click", (e) => {
+            if (!profileBtn.contains(e.target) && !dropdownMenu.contains(e.target)) {
+                dropdownMenu.classList.remove("show");
+            }
+        });
     }
 
-    // Cerrar sesión
+    // Cerrar sesión — limpiar TODO
     if (logoutBtn) {
         logoutBtn.addEventListener("click", () => {
             localStorage.removeItem("loggedIn");
+            localStorage.removeItem("userRole");
+            localStorage.removeItem("clienteRut");
             window.location.href = "index.html";
         });
     }
 
-    // ========= BOTONES DE acceso.html =========
-
-    const clienteBtn = document.getElementById("clienteBtn");
-    const analistaBtn = document.getElementById("analistaBtn");
-
-    if (clienteBtn) {
-        clienteBtn.addEventListener("click", () => {
-            localStorage.setItem("loggedIn", "true");
-            window.location.href = "index.html";
-        });
-    }
-
-    // Botón "Estados de solicitud" en el dropdown del perfil
+    // Botón "Estados de solicitud"
     const estUSU = document.getElementById("estUSU");
     if (estUSU) {
         estUSU.addEventListener("click", () => {
@@ -76,16 +77,23 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    if (analistaBtn) {
-        analistaBtn.addEventListener("click", () => {
-            window.location.href = "analista_riesgo.html";
-        });
-    }
-
+    // Botón "Pagos cuotas"
     const pagosbtn = document.getElementById("pagosbtn");
     if (pagosbtn) {
         pagosbtn.addEventListener("click", () => {
             window.location.href = "pagos.html";
         });
+    }
+
+    // ── Botones de acceso.html (por si acaso se usa main.js allí) ──
+    const clienteBtn  = document.getElementById("clienteBtn");
+    const analistaBtn = document.getElementById("analistaBtn");
+
+    if (clienteBtn && !clienteBtn.dataset.bound) {
+        clienteBtn.dataset.bound = "1";
+        // acceso.html maneja esto internamente
+    }
+    if (analistaBtn && !analistaBtn.dataset.bound) {
+        analistaBtn.dataset.bound = "1";
     }
 });
