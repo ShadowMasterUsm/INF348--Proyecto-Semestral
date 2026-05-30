@@ -4,7 +4,6 @@
 CREATE DATABASE IF NOT EXISTS BD06_TRAMITACION;
 USE BD06_TRAMITACION;
 
-
 -- ========================================
 -- TABLAS PRINCIPALES
 -- ========================================
@@ -21,6 +20,7 @@ CREATE TABLE IF NOT EXISTS comuna (
     FOREIGN KEY (id_region) REFERENCES region(id_region) ON DELETE CASCADE
 );
 
+-- FIX: columna password agregada para soportar registro y login de clientes
 CREATE TABLE IF NOT EXISTS cliente (
     id_cliente INT AUTO_INCREMENT PRIMARY KEY,
     id_region INT NOT NULL,
@@ -30,6 +30,7 @@ CREATE TABLE IF NOT EXISTS cliente (
     apellido VARCHAR(50) NOT NULL,
     telefono VARCHAR(15) NOT NULL,
     correo VARCHAR(50) NOT NULL,
+    password VARCHAR(255),
     FOREIGN KEY (id_region) REFERENCES region(id_region) ON DELETE CASCADE,
     FOREIGN KEY (id_comuna) REFERENCES comuna(id_comuna) ON DELETE CASCADE
 );
@@ -121,7 +122,20 @@ CREATE TABLE IF NOT EXISTS simulacion (
     FOREIGN KEY (id_tipo_credito) REFERENCES tipo_credito(id_tipo_credito)
 );
 
--- Triggers and procedures omitted for brevity (kept from original file)
+-- FIX: tabla pago_cuota faltaba completamente en este archivo
+CREATE TABLE IF NOT EXISTS pago_cuota (
+    id_pago        INT AUTO_INCREMENT PRIMARY KEY,
+    id_credito     INT NOT NULL,
+    numero_cuota   INT NOT NULL,
+    monto_pagado   DECIMAL(15,2) NOT NULL,
+    fecha_pago     DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_pago_cuota (id_credito, numero_cuota),
+    FOREIGN KEY (id_credito) REFERENCES credito(id_credito) ON DELETE CASCADE
+);
+
+-- ========================================
+-- TRIGGERS
+-- ========================================
 
 DELIMITER //
 
@@ -145,7 +159,72 @@ BEGIN
 END
 //
 
--- (rest of complex procedures/triggers preserved as in original API_TRAMITACION/init/init.sql)
+CREATE TRIGGER trg_calcular_costo_seguro
+AFTER INSERT ON credito_seguro
+FOR EACH ROW
+BEGIN
+    CALL calcular_costo_seguro(NEW.id_credito, NEW.id_seguro);
+    CALL actualizar_monto_total(NEW.id_credito);
+END
+//
+
+CREATE TRIGGER trg_calcular_costo_seguro_update
+AFTER UPDATE ON credito_seguro
+FOR EACH ROW
+BEGIN
+    CALL calcular_costo_seguro(NEW.id_credito, NEW.id_seguro);
+    CALL actualizar_monto_total(NEW.id_credito);
+END
+//
+
+DELIMITER ;
+
+-- ========================================
+-- PROCEDURES
+-- ========================================
+
+DELIMITER //
+
+CREATE PROCEDURE calcular_costo_seguro(IN p_id_credito INT, IN p_id_seguro INT)
+BEGIN
+    DECLARE v_monto_solicitado DECIMAL(15,2);
+    DECLARE v_tasa_seguro DECIMAL(5,2);
+    DECLARE v_costo_seguro DECIMAL(15,2);
+
+    SELECT monto_solicitado INTO v_monto_solicitado
+    FROM credito WHERE id_credito = p_id_credito;
+
+    SELECT tasa INTO v_tasa_seguro
+    FROM seguro WHERE id_seguro = p_id_seguro;
+
+    SET v_costo_seguro = v_monto_solicitado * v_tasa_seguro / 100;
+
+    UPDATE credito_seguro
+    SET costo_seguro = v_costo_seguro
+    WHERE id_credito = p_id_credito AND id_seguro = p_id_seguro;
+END
+//
+
+CREATE PROCEDURE actualizar_monto_total(IN p_id_credito INT)
+BEGIN
+    DECLARE v_monto_solicitado DECIMAL(15,2);
+    DECLARE v_numero_cuotas INT;
+    DECLARE v_tasa_interes DECIMAL(5,2);
+    DECLARE v_total_seguros DECIMAL(15,2);
+
+    SELECT monto_solicitado, numero_cuotas, tasa_interes_anual
+    INTO v_monto_solicitado, v_numero_cuotas, v_tasa_interes
+    FROM credito WHERE id_credito = p_id_credito;
+
+    SELECT IFNULL(SUM(costo_seguro),0) INTO v_total_seguros
+    FROM credito_seguro WHERE id_credito = p_id_credito;
+
+    UPDATE credito
+    SET monto_total_pagar = v_monto_solicitado + (v_monto_solicitado * v_tasa_interes * (v_numero_cuotas / 12)) + v_total_seguros,
+        monto_cuota = (v_monto_solicitado + (v_monto_solicitado * v_tasa_interes * (v_numero_cuotas / 12)) + v_total_seguros) / v_numero_cuotas
+    WHERE id_credito = p_id_credito;
+END
+//
 
 DELIMITER ;
 

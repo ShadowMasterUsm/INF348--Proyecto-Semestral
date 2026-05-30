@@ -188,3 +188,35 @@ body { background: #f5f7fa; }
     .cuotas-tabla th:nth-child(2), .cuotas-tabla td:nth-child(2) { display: none; }
     .cuotas-tabla th, .cuotas-tabla td { padding: 9px 10px; }
 }
+/* ── Badge estado crédito ── */
+.badge-estado {
+    display: inline-block;
+    padding: 3px 10px; border-radius: 12px;
+    font-size: 0.78rem; font-weight: 700;
+}
+.badge-estado.aprobado   { background: #d1fae5; color: #065f46; }
+.badge-estado.pendiente  { background: #fef3c7; color: #92400e; }
+.badge-estado.rechazado  { background: #fee2e2; color: #991b1b; }
+.badge-estado.pagado     { background: #e0e7ff; color: #3730a3; }
+
+/* ── Tarjeta crédito no aprobado ── */
+.credito-no-aprobado { opacity: 0.85; }
+.estado-credito-info {
+    display: flex; align-items: center; gap: 14px;
+    padding: 18px 0 8px;
+}
+.estado-msg {
+    font-size: 0.84rem; color: #6b7280; margin: 0;
+}
+
+/* ── Botón Ir a Pagos (en estado.js) ── */
+.btn-ir-pagos {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 5px 14px; border-radius: 20px;
+    background: #2B4C7E; color: #fff;
+    font-size: 0.8rem; font-weight: 600;
+    text-decoration: none;
+    transition: background .2s;
+}
+.btn-ir-pagos:hover { background: #1e3557; }

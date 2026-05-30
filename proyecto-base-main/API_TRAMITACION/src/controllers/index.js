@@ -239,9 +239,9 @@ const obtenerCreditosPorRut = async (req, res) => {
                 (SELECT COUNT(*) FROM credito_seguro cs JOIN seguro s ON cs.id_seguro = s.id_seguro WHERE cs.id_credito = c.id_credito AND s.nombre LIKE '%Cesantía%') > 0 as incluye_seguro_cesantia
             FROM credito c
             JOIN cliente cl ON c.id_cliente = cl.id_cliente
-            WHERE cl.rut = ?
+            WHERE REPLACE(cl.rut, '.', '') = ?
             ORDER BY c.id_credito DESC
-        `, [rut.trim()]);
+        `, [rut.replace(/\./g, '').trim()]);
 
         res.status(200).json({ ok: true, total: rows.length, data: rows });
     } catch (error) {
@@ -254,7 +254,7 @@ const obtenerCreditosPorRut = async (req, res) => {
 const registrarCliente = async (req, res) => {
     const promiseDb = database.promise();
     try {
-        const { rut, nombre, apellido, telefono, correo } = req.body;
+        const { rut, nombre, apellido, telefono, correo, password } = req.body;
 
         if (!rut || !nombre || !apellido || !telefono || !correo) {
             return res.status(400).json({ ok: false, error: 'Faltan campos obligatorios: rut, nombre, apellido, telefono, correo' });
@@ -265,8 +265,8 @@ const registrarCliente = async (req, res) => {
         await promiseDb.query("INSERT IGNORE INTO comuna (id_comuna, id_region, nombre) VALUES (1, 1, 'Santiago')");
 
         const [result] = await promiseDb.query(
-            'INSERT INTO cliente (id_region, id_comuna, rut, nombre, apellido, telefono, correo) VALUES (1, 1, ?, ?, ?, ?, ?)',
-            [rut.trim(), nombre.trim(), apellido.trim(), telefono.trim(), correo.trim()]
+            'INSERT INTO cliente (id_region, id_comuna, rut, nombre, apellido, telefono, correo, password) VALUES (1, 1, ?, ?, ?, ?, ?, ?)',
+            [rut.trim(), nombre.trim(), apellido.trim(), telefono.trim(), correo.trim(), password ? password.trim() : null]
         );
 
         return res.status(201).json({
@@ -292,22 +292,33 @@ const registrarCliente = async (req, res) => {
 const validarCliente = async (req, res) => {
     const promiseDb = database.promise();
     try {
-        const { rut } = req.query;
+        const { rut, password } = req.query;
         if (!rut) return res.status(400).json({ ok: false, error: 'Falta el parámetro rut' });
 
         const [rows] = await promiseDb.query(
-            'SELECT id_cliente, rut, nombre, apellido FROM cliente WHERE rut = ? LIMIT 1',
-            [rut.trim()]
+            'SELECT id_cliente, rut, nombre, apellido, password FROM cliente WHERE REPLACE(rut, \'.\', \'\') = ? LIMIT 1',
+            [rut.replace(/\./g, '').trim()]
         );
 
         if (rows.length === 0) {
             return res.status(404).json({ ok: false, existe: false, error: 'RUT no encontrado' });
         }
 
+        // FIX: verificar contraseña si el cliente tiene una registrada
+        const cliente = rows[0];
+        if (cliente.password !== null && cliente.password !== undefined) {
+            if (!password) {
+                return res.status(401).json({ ok: false, existe: true, error: 'Contraseña requerida' });
+            }
+            if (cliente.password.trim() !== password.trim()) {
+                return res.status(401).json({ ok: false, existe: true, error: 'RUT o contraseña incorrectos' });
+            }
+        }
+
         return res.status(200).json({
             ok: true,
             existe: true,
-            cliente: { id: rows[0].id_cliente, rut: rows[0].rut, nombre: rows[0].nombre, apellido: rows[0].apellido }
+            cliente: { id: cliente.id_cliente, rut: cliente.rut, nombre: cliente.nombre, apellido: cliente.apellido }
         });
     } catch (error) {
         console.error('Error al validar cliente:', error);

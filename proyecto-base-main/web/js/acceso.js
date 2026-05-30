@@ -25,10 +25,12 @@ function mostrar(panel) {
 
 // Al cargar: si viene con ?modo=registro ir directo al registro
 // Si ya hay sesión activa, redirigir al inicio
+// FIX: verificar ?modo=registro ANTES de chequear loggedIn para no bloquear el flujo de registro
 window.addEventListener('DOMContentLoaded', () => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('modo') === 'registro') {
         mostrar(panelRegistro);
+        return; // no redirigir al index aunque haya sesión activa
     }
     if (localStorage.getItem('loggedIn') === 'true') {
         window.location.href = 'index.html';
@@ -117,10 +119,13 @@ async function intentarIngreso() {
         const resp = await fetch(`${API_BASE}/cliente/validar?rut=${encodeURIComponent(rut)}&password=${encodeURIComponent(password)}`);
         const data = await resp.json();
 
-        if (!data.ok || !data.existe) {
+        if (!data.ok) {
             alertaNoReg.style.display = 'block';
             alertaNoReg.querySelector('strong').textContent = data.error || 'RUT o contraseña incorrectos';
-            inputRut.classList.add('error-input');
+            // FIX: si el RUT sí existe pero la contraseña es mala, solo marcar el campo password
+            if (data.existe === false) {
+                inputRut.classList.add('error-input');
+            }
             inputPassword.classList.add('error-input');
             setLoadingLogin(false);
             return;

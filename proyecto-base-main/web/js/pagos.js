@@ -19,7 +19,10 @@ const leerJSON   = (key, def) => { try { const r = localStorage.getItem(key); re
 const leerFirmadas = ()       => new Set(leerJSON(STORAGE_FIRMADAS, []));
 
 // ─── Sesión ───────────────────────────────────────────────────────────────────
-const obtenerRutSesion = () => (localStorage.getItem('clienteRut') || '').trim() || null;
+// Normaliza RUT: quita puntos, respeta el guión. Ej: "21.708.019-3" → "21708019-3"
+const normalizarRut = (rut) => (rut || '').replace(/\./g, '').trim();
+
+const obtenerRutSesion = () => normalizarRut(localStorage.getItem('clienteRut') || '') || null;
 
 // ─── Normalizar fecha que viene de MySQL ──────────────────────────────────────
 // MySQL DATE devuelve algo como "2026-07-16T03:00:00.000Z" o ya "2026-07-16"
@@ -206,14 +209,13 @@ async function renderPagos() {
     const cont = document.getElementById('pagos-contenedor');
     cont.innerHTML = '<p class="cargando">Cargando créditos...</p>';
 
+    // FIX: si no hay sesión activa de cliente, redirigir al login con redirect de vuelta
+    const loggedIn  = localStorage.getItem('loggedIn') === 'true';
+    const userRole  = localStorage.getItem('userRole') || '';
     const rutSesion = obtenerRutSesion();
-    if (!rutSesion) {
-        cont.innerHTML = `
-          <div class="empty-state">
-            <div class="empty-icon">🔒</div>
-            <p>Debes iniciar sesión como cliente para ver tus pagos.</p>
-            <p class="empty-hint"><a href="acceso.html">Ir al acceso</a></p>
-          </div>`;
+
+    if (!loggedIn || userRole !== 'cliente' || !rutSesion) {
+        window.location.href = 'acceso.html?redirect=' + encodeURIComponent('pagos.html');
         return;
     }
 
@@ -222,8 +224,22 @@ async function renderPagos() {
     try {
         const todosCreditos = await cargarCreditos(rutSesion);
 
-        // Solo créditos APROBADO — se muestran independientemente del localStorage de firmas
-        const creditos = todosCreditos.filter(c => c.estado === 'APROBADO');
+        const normEstado = (e) => (e || '').toString().trim().toUpperCase();
+
+        // Solo créditos APROBADO
+        const creditos = todosCreditos.filter(c => normEstado(c.estado) === 'APROBADO');
+
+        if (todosCreditos.length > 0 && creditos.length === 0) {
+            const enRevision = todosCreditos.filter(c => ['PENDIENTE','EN_REVISION'].includes(normEstado(c.estado))).length;
+            cont.innerHTML = `
+              <div class="empty-state">
+                <div class="empty-icon">⏳</div>
+                <p>Tienes ${enRevision} crédito${enRevision !== 1 ? 's' : ''} en revisión para RUT <strong>${rutSesion}</strong>.</p>
+                <p class="empty-hint">Las cuotas aparecerán aquí una vez que el analista apruebe tu solicitud.</p>
+                <p class="empty-hint"><a href="Estado.html">Ver estado de mis solicitudes →</a></p>
+              </div>`;
+            return;
+        }
 
         if (creditos.length === 0) {
             cont.innerHTML = `

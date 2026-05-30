@@ -97,7 +97,10 @@ function buildTabla(solicitudes, conFirmar = false) {
     const idFirma = String(s.id_credito || normId(s));
     const accion = conFirmar
       ? `<button class="btn-firmar" data-firma-id="${idFirma}">Firmar</button>`
-      : `<span class="badge ${s.firmada ? 'badge-firmada' : 'badge-pendiente'}">${s.firmada ? 'Firmada' : 'Pendiente'}</span>`;
+      : s.firmada
+        ? `<span class="badge badge-firmada">Firmada</span>
+           <a href="pagos.html" class="btn-ir-pagos">💳 Ir a Pagos</a>`
+        : `<span class="badge badge-pendiente">Pendiente</span>`;
 
     return `<tr>
       <td data-label="RUT">${rut}</td>
@@ -181,7 +184,7 @@ let idPendienteFirma = null;
 function abrirModal(id) { idPendienteFirma = id; document.getElementById('modalFirma').classList.add('visible'); }
 function cerrarModal()  { idPendienteFirma = null; document.getElementById('modalFirma').classList.remove('visible'); }
 
-function confirmarFirma() {
+async function confirmarFirma() {
   if (idPendienteFirma === null) return;
   const idStr   = String(idPendienteFirma);
   const firmadas = leerFirmadas();
@@ -202,7 +205,11 @@ function confirmarFirma() {
   guardarFirmadas(firmadas);
   cerrarModal();
   mostrarToast();
-  renderTodo();
+
+  // FIX: esperar el re-render y luego activar el tab "Firmadas" para que el
+  // usuario vea directamente el botón "Ir a Pagos" sin tener que cambiar tab
+  await renderTodo();
+  activarTab('firmadas');
 }
 
 function mostrarToast() {
@@ -212,17 +219,23 @@ function mostrarToast() {
 }
 
 // ─── Tabs ─────────────────────────────────────────────────────────────────────
+
+// FIX: función reutilizable para activar un tab por nombre
+function activarTab(nombre) {
+  document.querySelectorAll('.estado-tab').forEach(t => {
+    t.classList.toggle('active', t.dataset.tab === nombre);
+  });
+  document.querySelectorAll('.estado-panel').forEach(p => {
+    p.classList.toggle('active', p.id === `panel-${nombre}`);
+  });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   const tabs   = document.querySelectorAll('.estado-tab');
   const panels = document.querySelectorAll('.estado-panel');
 
   tabs.forEach(tab => {
-    tab.addEventListener('click', () => {
-      tabs.forEach(t => t.classList.remove('active'));
-      panels.forEach(p => p.classList.remove('active'));
-      tab.classList.add('active');
-      document.getElementById(`panel-${tab.dataset.tab}`).classList.add('active');
-    });
+    tab.addEventListener('click', () => activarTab(tab.dataset.tab));
   });
 
   document.addEventListener('click', (e) => {

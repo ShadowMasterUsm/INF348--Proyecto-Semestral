@@ -1,8 +1,6 @@
 CREATE DATABASE IF NOT EXISTS BD06_TRAMITACION;
 USE BD06_TRAMITACION;
 
-
-
 -- ========================================
 -- TABLAS PRINCIPALES
 -- ========================================
@@ -28,6 +26,7 @@ CREATE TABLE IF NOT EXISTS cliente (
     apellido VARCHAR(50) NOT NULL,
     telefono VARCHAR(15) NOT NULL,
     correo VARCHAR(50) NOT NULL,
+    password VARCHAR(255),
     FOREIGN KEY (id_region) REFERENCES region(id_region) ON DELETE CASCADE,
     FOREIGN KEY (id_comuna) REFERENCES comuna(id_comuna) ON DELETE CASCADE
 );
@@ -128,6 +127,7 @@ CREATE TABLE IF NOT EXISTS pago_cuota (
     UNIQUE KEY uq_pago_cuota (id_credito, numero_cuota),
     FOREIGN KEY (id_credito) REFERENCES credito(id_credito) ON DELETE CASCADE
 );
+
 -- ========================================
 -- TRIGGERS
 -- ========================================
@@ -172,19 +172,7 @@ BEGIN
 END
 //
 
-/*
-CREATE TRIGGER trg_actualizar_monto_total_credito
-AFTER UPDATE ON credito
-FOR EACH ROW
-BEGIN
-    CALL actualizar_monto_total(NEW.id_credito);
-END
-*/
-//
-
 DELIMITER ;
-
-
 
 -- ========================================
 -- PROCEDURES
@@ -198,15 +186,11 @@ BEGIN
     DECLARE v_tasa_seguro DECIMAL(5,2);
     DECLARE v_costo_seguro DECIMAL(15,2);
 
-    SELECT monto_solicitado
-    INTO v_monto_solicitado
-    FROM credito c
-    WHERE c.id_credito = p_id_credito;
+    SELECT monto_solicitado INTO v_monto_solicitado
+    FROM credito WHERE id_credito = p_id_credito;
 
-    SELECT tasa
-    INTO v_tasa_seguro
-    FROM seguro s
-    WHERE s.id_seguro = p_id_seguro;
+    SELECT tasa INTO v_tasa_seguro
+    FROM seguro WHERE id_seguro = p_id_seguro;
 
     SET v_costo_seguro = v_monto_solicitado * v_tasa_seguro / 100;
 
@@ -225,13 +209,10 @@ BEGIN
 
     SELECT monto_solicitado, numero_cuotas, tasa_interes_anual
     INTO v_monto_solicitado, v_numero_cuotas, v_tasa_interes
-    FROM credito
-    WHERE id_credito = p_id_credito;
+    FROM credito WHERE id_credito = p_id_credito;
 
-    SELECT IFNULL(SUM(costo_seguro),0)
-    INTO v_total_seguros
-    FROM credito_seguro
-    WHERE id_credito = p_id_credito;
+    SELECT IFNULL(SUM(costo_seguro),0) INTO v_total_seguros
+    FROM credito_seguro WHERE id_credito = p_id_credito;
 
     UPDATE credito
     SET monto_total_pagar = v_monto_solicitado + (v_monto_solicitado * v_tasa_interes * (v_numero_cuotas / 12)) + v_total_seguros,
@@ -239,85 +220,5 @@ BEGIN
     WHERE id_credito = p_id_credito;
 END
 //
-
-DELIMITER //
-
-CREATE PROCEDURE calcular_cuota_simulacion_preciso(IN p_id_simulacion INT)
-BEGIN
-    DECLARE v_monto DECIMAL(15,2);
-    DECLARE v_cuotas INT;
-    DECLARE v_tasa_anual DECIMAL(5,2);
-    DECLARE v_tasa_mensual DECIMAL(10,6);
-    DECLARE v_seguro_desgravamen BOOLEAN;
-    DECLARE v_seguro_cesantia BOOLEAN;
-    DECLARE v_monto_total DECIMAL(15,2) DEFAULT 0;
-    DECLARE v_monto_cuota_promedio DECIMAL(15,2);
-    DECLARE v_saldo DECIMAL(15,2);
-    DECLARE v_interes_mes DECIMAL(15,2);
-    DECLARE v_capital_mes DECIMAL(15,2);
-    DECLARE v_seguro_mes DECIMAL(15,2);
-    DECLARE i INT DEFAULT 1;
-
-    -- Parámetros de seguros (puedes ajustar según tu banco)
-    DECLARE v_tasa_seguro_desgravamen DECIMAL(5,4) DEFAULT 0.0005; -- 0.05% mensual sobre saldo
-    DECLARE v_tasa_seguro_cesantia DECIMAL(5,4) DEFAULT 0.002;      -- 0.2% mensual sobre cuota
-
-    -- Obtener datos de la simulación
-    SELECT monto, cuotas, tasa_interes_anual,
-           incluye_seguro_desgravamen, incluye_seguro_cesantia
-    INTO v_monto, v_cuotas, v_tasa_anual, v_seguro_desgravamen, v_seguro_cesantia
-    FROM simulacion
-    WHERE id_simulacion = p_id_simulacion;
-
-    -- Calcular tasa mensual
-    SET v_tasa_mensual = v_tasa_anual / 12 / 100;
-
-    -- Inicializar saldo
-    SET v_saldo = v_monto;
-
-    -- Bucle para calcular cada cuota
-    WHILE i <= v_cuotas DO
-        -- Cuota sistema francés sin seguros
-        SET v_monto_cuota_promedio = v_saldo * (v_tasa_mensual * POW(1 + v_tasa_mensual, v_cuotas)) /
-                                     (POW(1 + v_tasa_mensual, v_cuotas) - 1);
-
-        -- Interés del mes
-        SET v_interes_mes = v_saldo * v_tasa_mensual;
-        -- Capital del mes
-        SET v_capital_mes = v_monto_cuota_promedio - v_interes_mes;
-
-        -- Seguros sobre saldo o cuota
-        SET v_seguro_mes = 0;
-        IF v_seguro_desgravamen THEN
-            SET v_seguro_mes = v_seguro_mes + v_saldo * v_tasa_seguro_desgravamen;
-        END IF;
-        IF v_seguro_cesantia THEN
-            SET v_seguro_mes = v_seguro_mes + v_monto_cuota_promedio * v_tasa_seguro_cesantia;
-        END IF;
-
-        -- Sumar al total
-        SET v_monto_total = v_monto_total + v_monto_cuota_promedio + v_seguro_mes;
-
-        -- Actualizar saldo
-        SET v_saldo = v_saldo - v_capital_mes;
-
-        -- Siguiente cuota
-        SET i = i + 1;
-    END WHILE;
-
-    -- Guardar resultados promedio por cuota
-    SET v_monto_cuota_promedio = v_monto_total / v_cuotas;
-
-    -- Actualizar tabla simulación
-    UPDATE simulacion
-    SET monto_cuota = v_monto_cuota_promedio,
-        monto_total = v_monto_total
-    WHERE id_simulacion = p_id_simulacion;
-
-END
-//
-
-DELIMITER ;
-
 
 DELIMITER ;
