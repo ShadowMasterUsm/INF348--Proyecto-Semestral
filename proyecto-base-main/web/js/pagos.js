@@ -161,16 +161,25 @@ function buildTarjeta(cred, pagadasSet) {
         </tr>`;
     }).join('');
 
+    const estadoLabel = pagadas >= plazo ? '✅ Completado' : pagadas > 0 ? '🔄 En curso' : '🆕 Nuevo';
+    const cuotaMensualFmt = fmt(montoCuota);
+
     return `
 <div class="credito-card" id="card-${id}">
   <div class="credito-header">
     <div>
-      <span class="credito-titulo">Crédito #${id}</span>
-      <span class="credito-rut">RUT ${cred.rut}</span>
+      <span class="credito-titulo">💳 Crédito #${id}</span>
+      <span class="credito-rut">RUT ${cred.rut || '—'}</span>
+      <div class="credito-resumen">
+        <span class="pill-info">${estadoLabel}</span>
+        <span class="pill-info">📅 ${plazo} cuotas</span>
+        <span class="pill-info">📈 ${tasa}% anual</span>
+        <span class="pill-info">💵 ${cuotaMensualFmt}/mes</span>
+      </div>
     </div>
     <div class="credito-nums">
       <span>${fmt(monto)}</span>
-      <span>${plazo} cuotas · ${tasa}% anual</span>
+      <span>Monto solicitado</span>
     </div>
   </div>
 
@@ -182,8 +191,9 @@ function buildTarjeta(cred, pagadasSet) {
   </div>
 
   <div class="deuda-pendiente">
-    Saldo pendiente: <strong>${fmt(saldoPendiente)}</strong>
-    ${pagadas >= plazo ? ' · <span class="credito-pagado">🎉 ¡Crédito completamente pagado!</span>' : ''}
+    <span>Saldo pendiente:</span>
+    <strong>${fmt(saldoPendiente)}</strong>
+    ${pagadas >= plazo ? '<span class="credito-pagado">🎉 ¡Crédito completamente pagado!</span>' : ''}
   </div>
 
   <div class="cuotas-wrap">
@@ -209,12 +219,12 @@ async function renderPagos() {
     const cont = document.getElementById('pagos-contenedor');
     cont.innerHTML = '<p class="cargando">Cargando créditos...</p>';
 
-    // FIX: si no hay sesión activa de cliente, redirigir al login con redirect de vuelta
-    const loggedIn  = localStorage.getItem('loggedIn') === 'true';
-    const userRole  = localStorage.getItem('userRole') || '';
+    // Verificar sesión: se necesita un RUT de cliente guardado.
+    // No se exige rol estricto "cliente" para no bloquear al usuario
+    // que acaba de firmar desde la vista de Estado.
     const rutSesion = obtenerRutSesion();
 
-    if (!loggedIn || userRole !== 'cliente' || !rutSesion) {
+    if (!rutSesion) {
         window.location.href = 'acceso.html?redirect=' + encodeURIComponent('pagos.html');
         return;
     }
@@ -362,8 +372,13 @@ async function confirmarPago() {
 function toast(msg) {
     const t = document.getElementById('toast-pagos');
     t.textContent = msg;
+    if (msg.startsWith('❌')) {
+        t.classList.add('error-toast');
+    } else {
+        t.classList.remove('error-toast');
+    }
     t.classList.add('show');
-    setTimeout(() => t.classList.remove('show'), 3500);
+    setTimeout(() => { t.classList.remove('show'); t.classList.remove('error-toast'); }, 3500);
 }
 
 // ─── Init ─────────────────────────────────────────────────────────────────────

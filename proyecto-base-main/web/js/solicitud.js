@@ -1,4 +1,15 @@
 document.addEventListener("DOMContentLoaded", () => {
+    // ── Verificar sesión ────────────────────────────────────────────────────
+    // Si el usuario no está logueado como cliente, redirigir al login
+    const loggedIn = localStorage.getItem('loggedIn') === 'true';
+    const userRole = localStorage.getItem('userRole') || '';
+    if (!loggedIn || userRole !== 'cliente') {
+        const redirectTo = window.location.pathname.split('/').pop() + window.location.search;
+        window.location.href = 'acceso.html?redirect=' + encodeURIComponent(redirectTo);
+        return;
+    }
+    // ───────────────────────────────────────────────────────────────────────
+
     const inputDocumento = document.getElementById("documento");
 
     if (inputDocumento) {

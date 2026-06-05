@@ -100,7 +100,7 @@ body { background: #f5f7fa; }
 
 .badge-pendiente  { background: #fff3cd; color: #856404; }
 .badge-sin-firmar { background: #cce5ff; color: #004085; }
-.badge-firmada    { background: #d4edda; color: #155724; }
+.badge-firmada    { background: transparent; color: #567ebb; border: 1.5px solid #567ebb; }
 
 /* ── Botón firmar ── */
 .btn-firmar {
@@ -115,7 +115,29 @@ body { background: #f5f7fa; }
     transition: background 0.2s;
 }
 
-.btn-firmar:hover { background: #005bb5; }
+.btn-firmar:hover { background:#567ebb; }
+
+/* ── Botón Ir a Pagos ── */
+.btn-ir-pagos {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 5px 14px;
+    background: transparent;
+    color: #567ebb;
+    border: 1.5px solid #567ebb;
+    border-radius: 6px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    vertical-align: middle;
+    transition: background 0.18s, color 0.18s;
+}
+
+.btn-ir-pagos:hover {
+    background: #567ebb;
+    color: #fff;
+}
 
 /* ── Mensaje vacío ── */
 .empty-state {
@@ -177,7 +199,7 @@ body { background: #f5f7fa; }
 
 .modal-btn-confirm {
     padding: 10px 24px;
-    background: #0073e6;
+    background: #567ebb;
     color: #fff;
     border: none;
     border-radius: 7px;
@@ -187,7 +209,7 @@ body { background: #f5f7fa; }
     transition: background 0.2s;
 }
 
-.modal-btn-confirm:hover { background: #005bb5; }
+.modal-btn-confirm:hover { background:#567ebb; }
 
 /* ── Toast ── */
 .toast {

@@ -98,8 +98,8 @@ function buildTabla(solicitudes, conFirmar = false) {
     const accion = conFirmar
       ? `<button class="btn-firmar" data-firma-id="${idFirma}">Firmar</button>`
       : s.firmada
-        ? `<span class="badge badge-firmada">Firmada</span>
-           <a href="pagos.html" class="btn-ir-pagos">💳 Ir a Pagos</a>`
+        ? `
+           <button class="btn-ir-pagos" data-rut="${rut}" onclick="irAPagos('${rut}')">💳 Ir a Pagos</button>`
         : `<span class="badge badge-pendiente">Pendiente</span>`;
 
     return `<tr>
@@ -189,7 +189,7 @@ async function confirmarFirma() {
   const idStr   = String(idPendienteFirma);
   const firmadas = leerFirmadas();
 
-  // También actualizar localStorage del analista para consistencia
+  // Actualizar localStorage del analista para consistencia
   const analista = leerAnalista();
   if (analista) {
     const solicitud = (analista['sin-firmar'] ?? []).find(s => String(normId(s)) === idStr || String(s.id_credito) === idStr);
@@ -206,8 +206,7 @@ async function confirmarFirma() {
   cerrarModal();
   mostrarToast();
 
-  // FIX: esperar el re-render y luego activar el tab "Firmadas" para que el
-  // usuario vea directamente el botón "Ir a Pagos" sin tener que cambiar tab
+  // Re-renderizar y activar tab "Firmadas" — el botón "Ir a Pagos" queda disponible ahí
   await renderTodo();
   activarTab('firmadas');
 }
@@ -228,6 +227,22 @@ function activarTab(nombre) {
   document.querySelectorAll('.estado-panel').forEach(p => {
     p.classList.toggle('active', p.id === `panel-${nombre}`);
   });
+}
+
+// ─── Ir a Pagos: guardar RUT en sesión y navegar ──────────────────────────────
+function irAPagos(rut) {
+  // Asegurarse de que haya sesión de cliente con el RUT correcto
+  // para que pagos.js no redirija al inicio
+  const rutLimpio = (rut || '').replace(/\./g, '').trim();
+  if (rutLimpio) {
+    localStorage.setItem('clienteRut', rutLimpio);
+    localStorage.setItem('loggedIn', 'true');
+    // Solo sobreescribir el rol si no hay uno ya activo
+    if (!localStorage.getItem('userRole')) {
+      localStorage.setItem('userRole', 'cliente');
+    }
+  }
+  window.location.href = 'pagos.html';
 }
 
 document.addEventListener('DOMContentLoaded', () => {

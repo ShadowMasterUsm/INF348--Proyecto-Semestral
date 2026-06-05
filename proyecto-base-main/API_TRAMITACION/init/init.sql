@@ -55,7 +55,7 @@ CREATE TABLE IF NOT EXISTS credito (
     tasa_interes_anual DECIMAL(5,2) CHECK(tasa_interes_anual >= 0),
     monto_total_pagar DECIMAL(15,2),
     monto_cuota DECIMAL(15,2),
-    estado ENUM('PENDIENTE', 'EN_REVISION', 'APROBADO', 'RECHAZADO', 'PAGADO') DEFAULT 'PENDIENTE',
+    estado ENUM('PENDIENTE', 'Sin_firmar', 'APROBADO', 'RECHAZADO', 'PAGADO') DEFAULT 'PENDIENTE',
     fecha_solicitud DATETIME DEFAULT NOW(),
     FOREIGN KEY (id_tipo_credito) REFERENCES tipo_credito(id_tipo_credito) ON DELETE CASCADE,
     FOREIGN KEY (id_cliente) REFERENCES cliente(id_cliente) ON DELETE CASCADE
@@ -154,23 +154,6 @@ BEGIN
 END
 //
 
-CREATE TRIGGER trg_calcular_costo_seguro
-AFTER INSERT ON credito_seguro
-FOR EACH ROW
-BEGIN
-    CALL calcular_costo_seguro(NEW.id_credito, NEW.id_seguro);
-    CALL actualizar_monto_total(NEW.id_credito);
-END
-//
-
-CREATE TRIGGER trg_calcular_costo_seguro_update
-AFTER UPDATE ON credito_seguro
-FOR EACH ROW
-BEGIN
-    CALL calcular_costo_seguro(NEW.id_credito, NEW.id_seguro);
-    CALL actualizar_monto_total(NEW.id_credito);
-END
-//
 
 DELIMITER ;
 

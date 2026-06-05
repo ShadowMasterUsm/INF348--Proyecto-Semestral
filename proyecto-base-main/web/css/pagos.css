@@ -1,222 +1,444 @@
-/* ── Layout ── */
-body { background: #f5f7fa; }
+/* ─── Variables de la paleta ─────────────────────────────────────────── */
+:root {
+    --azul:       #2b4c7e;
+    --azul-medio: #567ebb;
+    --azul-claro: #eef3fb;
+    --texto:      #1e3558;
+    --gris:       #6b7280;
+    --gris-claro: #f2f4f7;
+    --borde:      #e2e8f0;
+    --blanco:     #ffffff;
+}
+
+/* ─── Layout ─────────────────────────────────────────────────────────── */
+body { background: var(--gris-claro); }
 
 .pagos-wrapper {
-    max-width: 960px;
+    max-width: 920px;
     margin: 40px auto;
     padding: 0 24px 80px;
 }
-.pagos-wrapper h1 { font-size: 1.7rem; color: #1a1a2e; margin-bottom: 4px; }
-.pagos-wrapper .subtitulo { color: #777; font-size: 0.92rem; margin-bottom: 28px; }
-.cargando { color: #888; font-size: 0.9rem; padding: 20px 0; }
 
-/* ── Tarjeta ── */
+.pagos-wrapper h1 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--texto);
+    margin-bottom: 4px;
+    letter-spacing: -0.02em;
+}
+
+.pagos-wrapper .subtitulo {
+    color: var(--gris);
+    font-size: 0.9rem;
+    margin-bottom: 32px;
+}
+
+.cargando { color: var(--gris); font-size: 0.9rem; padding: 20px 0; }
+
+/* ─── Tarjeta ────────────────────────────────────────────────────────── */
 .credito-card {
-    background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.07);
-    margin-bottom: 24px;
+    background: var(--blanco);
+    border-radius: 10px;
+    border: 1px solid var(--borde);
+    margin-bottom: 20px;
     overflow: hidden;
 }
 
+/* ─── Header ─────────────────────────────────────────────────────────── */
 .credito-header {
-    background: #f0f6ff;
-    padding: 16px 22px;
+    background: #567ebb;
+    padding: 18px 22px;
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    border-bottom: 1px solid #e4eaf5;
+    align-items: flex-start;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 10px;
 }
-.credito-titulo { display: block; font-size: 1rem; font-weight: 700; color: #1a1a2e; }
-.credito-rut    { display: block; font-size: 0.8rem; color: #777; margin-top: 2px; }
-.credito-nums   { display: flex; flex-direction: column; align-items: flex-end; gap: 2px;
-                  font-size: 0.85rem; color: #555; font-weight: 600; }
 
-/* ── Progreso ── */
-.progreso-wrap { padding: 16px 22px 8px; }
-.prog-labels   { display: flex; justify-content: space-between; font-size: 0.8rem; color: #666; margin-bottom: 6px; }
-.prog-bar      { height: 8px; background: #e8edf5; border-radius: 99px; overflow: hidden; }
-.prog-fill     { height: 100%; background: linear-gradient(90deg, #2b4c7e, #567ebb); border-radius: 99px; transition: width .4s; }
+.credito-titulo {
+    display: block;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #fff;
+}
 
-/* ── Deuda ── */
+.credito-rut {
+    display: block;
+    font-size: 0.76rem;
+    color: rgba(255,255,255,0.6);
+    margin-top: 2px;
+}
+
+.credito-resumen {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 10px;
+    width: 100%;
+}
+
+.pill-info {
+    background: rgba(255,255,255,0.12);
+    color: rgba(255,255,255,0.9);
+    border-radius: 4px;
+    padding: 2px 8px;
+    font-size: 0.72rem;
+    font-weight: 600;
+}
+
+.credito-nums {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+}
+
+.credito-nums span:first-child {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: -0.02em;
+}
+
+.credito-nums span:last-child {
+    font-size: 0.72rem;
+    color: rgba(255,255,255,0.55);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+/* ─── Barra de progreso ──────────────────────────────────────────────── */
+.progreso-wrap {
+    padding: 16px 22px 12px;
+    border-bottom: 1px solid var(--borde);
+}
+
+.prog-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.76rem;
+    color: var(--gris);
+    margin-bottom: 7px;
+}
+
+.prog-pct {
+    font-weight: 700;
+    color: var(--azul);
+}
+
+.prog-bar {
+    height: 5px;
+    background: var(--borde);
+    border-radius: 99px;
+    overflow: hidden;
+}
+
+.prog-fill {
+    height: 100%;
+    background: var(--azul-medio);
+    border-radius: 99px;
+    transition: width .4s ease;
+}
+
+/* ─── Saldo ──────────────────────────────────────────────────────────── */
 .deuda-pendiente {
-    padding: 8px 22px 14px;
-    font-size: 0.85rem;
-    color: #444;
-    border-bottom: 1px solid #f0f0f0;
+    padding: 10px 22px 14px;
+    font-size: 0.82rem;
+    color: var(--gris);
+    border-bottom: 1px solid var(--borde);
+    display: flex;
+    align-items: center;
+    gap: 6px;
 }
-.credito-pagado { color: #1d7a45; font-weight: 700; }
 
-/* ── Tabla cuotas ── */
+.deuda-pendiente strong {
+    color: var(--texto);
+    font-size: 0.95rem;
+    font-weight: 700;
+}
+
+.credito-pagado {
+    color: #059669;
+    font-weight: 600;
+    font-size: 0.78rem;
+}
+
+/* ─── Tabla cuotas ───────────────────────────────────────────────────── */
 .cuotas-wrap { padding: 0; }
 
 .cuotas-tabla {
     width: 100%;
     border-collapse: collapse;
-    font-size: 0.875rem;
+    font-size: 0.85rem;
 }
-.cuotas-tabla thead tr { background: #f8f9fc; }
+
+.cuotas-tabla thead tr {
+    background: var(--gris-claro);
+}
+
 .cuotas-tabla th {
-    padding: 10px 14px;
+    padding: 10px 16px;
     text-align: left;
-    font-weight: 700;
-    color: #555;
-    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--gris);
+    font-size: 0.72rem;
     text-transform: uppercase;
-    letter-spacing: 0.03em;
-    border-bottom: 2px solid #eaeef6;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid var(--borde);
 }
-.cuotas-tabla td { padding: 11px 14px; border-bottom: 1px solid #f0f0f0; color: #333; }
+
+.cuotas-tabla td {
+    padding: 11px 16px;
+    border-bottom: 1px solid var(--borde);
+    color: #374151;
+    vertical-align: middle;
+}
+
+.cuotas-tabla td:first-child {
+    font-weight: 600;
+    color: var(--gris);
+    font-size: 0.78rem;
+    width: 36px;
+}
+
 .cuotas-tabla tbody tr:last-child td { border-bottom: none; }
+.cuotas-tabla tbody tr:hover { background: var(--azul-claro); }
 
-/* filas por estado */
-.fila-cuota.pagada   { background: #f7fdf7; color: #aaa; }
-.fila-cuota.vencida  { background: #fff8f5; }
-.fila-cuota.hoy      { background: #fffbe6; }
-.fila-cuota.corresponde:not(.pagada) { font-weight: 600; }
+/* ─── Filas por estado ───────────────────────────────────────────────── */
+.fila-cuota.pagada td { color: #9ca3af; }
+.fila-cuota.pagada    { background: #fafafa; }
+.fila-cuota.vencida   { background: #fff9f9; }
+.fila-cuota.hoy       { background: #fffbf0; }
+.fila-cuota.corresponde:not(.pagada) { background: var(--azul-claro); }
 
-/* ── Badges cuota ── */
+/* ─── Badges ─────────────────────────────────────────────────────────── */
 .badge-cuota {
     display: inline-block;
-    padding: 4px 10px;
-    border-radius: 20px;
-    font-size: 0.75rem;
-    font-weight: 700;
+    padding: 3px 9px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 600;
 }
-.badge-cuota.pagada   { background: #e6f9ee; color: #1d7a45; }
-.badge-cuota.vencida  { background: #fff0ec; color: #c0392b; }
-.badge-cuota.hoy      { background: #fff8dc; color: #9a6700; }
-.badge-cuota.proxima  { background: #eef3ff; color: #2b4c7e; }
-.badge-cuota.futura   { background: #f2f2f2; color: #888; }
 
-/* ── Checkboxes ── */
-.chk-cuota {
-    width: 17px; height: 17px;
-    accent-color: #2b4c7e;
+.badge-cuota.pagada  { background: #f0fdf4; color: #16a34a; }
+.badge-cuota.vencida { background: #fef2f2; color: #dc2626; }
+.badge-cuota.hoy     { background: #fffbeb; color: #d97706; }
+.badge-cuota.proxima { background: var(--azul-claro); color: var(--azul); }
+.badge-cuota.futura  { background: var(--gris-claro); color: var(--gris); }
+
+/* ─── Checkboxes ─────────────────────────────────────────────────────── */
+.chk-cuota  { width: 15px; height: 15px; accent-color: var(--azul); cursor: pointer; }
+.chk-todos  { width: 14px; height: 14px; accent-color: var(--azul); cursor: pointer; }
+
+.chk-todos-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 600;
+    font-size: 0.72rem;
+    color: var(--gris);
     cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
 }
-.chk-todos { width: 15px; height: 15px; accent-color: #2b4c7e; cursor: pointer; }
-.chk-todos-label { display: flex; align-items: center; gap: 6px; font-weight: 700;
-                   font-size: 0.78rem; color: #555; cursor: pointer; }
-.check-ok { color: #1d7a45; font-weight: 700; }
 
-/* ── Barra inferior de pago ── */
+.check-ok { color: #16a34a; font-weight: 700; }
+
+/* ─── Barra de pago ──────────────────────────────────────────────────── */
 .pagar-seleccion-wrap {
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 14px 22px;
-    border-top: 1px solid #f0f0f0;
-    background: #fafbff;
+    border-top: 1px solid var(--borde);
+    background: var(--gris-claro);
     flex-wrap: wrap;
     gap: 10px;
 }
-.seleccion-info { font-size: 0.85rem; color: #555; }
+
+.seleccion-info {
+    font-size: 0.82rem;
+    color: var(--gris);
+}
+
 .btn-pagar-sel {
-    background: #2b4c7e;
+    background: #567ebb;
     color: #fff;
     border: none;
     padding: 9px 22px;
-    border-radius: 20px;
-    font-size: 0.85rem;
-    font-weight: 700;
+    border-radius: 6px;
+    font-size: 0.83rem;
+    font-weight: 600;
     cursor: pointer;
-    transition: background .2s;
+    transition: background .15s;
 }
-.btn-pagar-sel:hover:not(:disabled) { background: #1a3459; }
-.btn-pagar-sel:disabled { background: #c0c8d8; cursor: default; }
 
-/* ── Empty state ── */
-.empty-state { text-align: center; padding: 60px 20px; color: #888; }
-.empty-icon  { font-size: 3rem; margin-bottom: 12px; }
-.empty-hint  { font-size: 0.82rem; margin-top: 8px; }
-.empty-hint a { color: #2b4c7e; }
+.btn-pagar-sel:hover:not(:disabled) { background: #1e3a6e; }
+.btn-pagar-sel:disabled { background: var(--borde); color: #aaa; cursor: default; }
 
-/* ── Modal ── */
+/* ─── Empty state ────────────────────────────────────────────────────── */
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--gris);
+    background: var(--blanco);
+    border-radius: 10px;
+    border: 1px solid var(--borde);
+}
+
+.empty-icon  { font-size: 2.4rem; margin-bottom: 12px; }
+.empty-state p { font-size: 0.9rem; color: var(--gris); margin-bottom: 4px; }
+.empty-hint  { font-size: 0.8rem; margin-top: 6px; }
+.empty-hint a { color: var(--azul-medio); font-weight: 600; text-decoration: none; }
+.empty-hint a:hover { text-decoration: underline; }
+
+/* ─── Modal ──────────────────────────────────────────────────────────── */
 .modal-overlay {
     display: none;
     position: fixed; inset: 0;
-    background: rgba(0,0,0,0.45);
+    background: rgba(0,0,0,0.4);
     z-index: 1000;
     align-items: center;
     justify-content: center;
 }
+
 .modal-overlay.visible { display: flex; }
+
 .modal-box {
-    background: #fff;
-    border-radius: 14px;
+    background: var(--blanco);
+    border-radius: 12px;
     padding: 36px 32px 28px;
     max-width: 420px;
-    width: 90%;
+    width: 92%;
     text-align: center;
-    box-shadow: 0 8px 40px rgba(0,0,0,0.18);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.14);
+    animation: fadeUp .2s ease;
 }
-.modal-icon { font-size: 2.4rem; margin-bottom: 10px; }
-.modal-box h3 { font-size: 1.15rem; color: #1a1a2e; margin-bottom: 14px; }
-.modal-box p  { color: #555; font-size: 0.88rem; line-height: 1.7; }
-.modal-total  { font-size: 1rem; font-weight: 700; color: #2b4c7e; }
-.modal-actions { display: flex; gap: 12px; justify-content: center; margin-top: 22px; }
+
+@keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.modal-icon { font-size: 2rem; margin-bottom: 10px; }
+
+.modal-box h3 {
+    font-size: 1.1rem;
+    color: var(--texto);
+    font-weight: 700;
+    margin-bottom: 12px;
+}
+
+.modal-box p { color: var(--gris); font-size: 0.86rem; line-height: 1.7; }
+
+.modal-aviso {
+    font-size: 0.74rem;
+    color: #9ca3af;
+    margin-top: 10px;
+    padding: 8px 12px;
+    background: var(--gris-claro);
+    border-radius: 6px;
+    text-align: left;
+}
+
+.modal-total {
+    display: block;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--texto);
+    margin-top: 4px;
+}
+
+.modal-actions { display: flex; gap: 10px; justify-content: center; margin-top: 22px; }
+
 .modal-btn-cancel {
-    background: #f0f0f0; color: #555; border: none;
-    padding: 10px 24px; border-radius: 20px; font-size: 0.88rem; font-weight: 600; cursor: pointer;
+    background: var(--gris-claro);
+    color: var(--gris);
+    border: 1px solid var(--borde);
+    padding: 9px 22px;
+    border-radius: 6px;
+    font-size: 0.86rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .15s;
 }
+
+.modal-btn-cancel:hover { background: var(--borde); }
+
 .modal-btn-confirm {
-    background: #2b4c7e; color: #fff; border: none;
-    padding: 10px 24px; border-radius: 20px; font-size: 0.88rem; font-weight: 700; cursor: pointer;
+    background: #567ebb;
+    color: #fff;
+    border: none;
+    padding: 9px 22px;
+    border-radius: 6px;
+    font-size: 0.86rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .15s;
 }
-.modal-btn-confirm:hover { background: #1a3459; }
 
-/* ── Toast ── */
+.modal-btn-confirm:hover { background: #1e3a6e; }
+.modal-btn-confirm:disabled { opacity: 0.5; cursor: default; }
+
+/* ─── Toast ──────────────────────────────────────────────────────────── */
 .toast {
-    position: fixed; bottom: 28px; left: 50%;
-    transform: translateX(-50%) translateY(20px);
-    background: #1d7a45; color: #fff;
-    padding: 12px 26px; border-radius: 30px;
-    font-size: 0.88rem; font-weight: 600;
-    opacity: 0; pointer-events: none;
-    transition: opacity .3s, transform .3s;
-    z-index: 2000; white-space: nowrap;
+    position: fixed;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%) translateY(12px);
+    background: var(--texto);
+    color: #fff;
+    padding: 11px 22px;
+    border-radius: 6px;
+    font-size: 0.84rem;
+    font-weight: 600;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .25s, transform .25s;
+    z-index: 2000;
+    white-space: nowrap;
 }
-.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-/* ── Responsive ── */
-@media (max-width: 600px) {
-    .credito-header { flex-direction: column; align-items: flex-start; }
-    .credito-nums   { align-items: flex-start; }
-    .cuotas-tabla th:nth-child(2), .cuotas-tabla td:nth-child(2) { display: none; }
-    .cuotas-tabla th, .cuotas-tabla td { padding: 9px 10px; }
-}
-/* ── Badge estado crédito ── */
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.toast.error-toast { background: #dc2626; }
+
+/* ─── Badges estado crédito ──────────────────────────────────────────── */
 .badge-estado {
     display: inline-block;
-    padding: 3px 10px; border-radius: 12px;
-    font-size: 0.78rem; font-weight: 700;
-}
-.badge-estado.aprobado   { background: #d1fae5; color: #065f46; }
-.badge-estado.pendiente  { background: #fef3c7; color: #92400e; }
-.badge-estado.rechazado  { background: #fee2e2; color: #991b1b; }
-.badge-estado.pagado     { background: #e0e7ff; color: #3730a3; }
-
-/* ── Tarjeta crédito no aprobado ── */
-.credito-no-aprobado { opacity: 0.85; }
-.estado-credito-info {
-    display: flex; align-items: center; gap: 14px;
-    padding: 18px 0 8px;
-}
-.estado-msg {
-    font-size: 0.84rem; color: #6b7280; margin: 0;
+    padding: 3px 9px;
+    border-radius: 4px;
+    font-size: 0.72rem;
+    font-weight: 600;
 }
 
-/* ── Botón Ir a Pagos (en estado.js) ── */
+.badge-estado.aprobado  { background: #f0fdf4; color: #16a34a; }
+.badge-estado.pendiente { background: #fffbeb; color: #d97706; }
+.badge-estado.rechazado { background: #fef2f2; color: #dc2626; }
+.badge-estado.pagado    { background: var(--azul-claro); color: var(--azul); }
+
+/* ─── Botón Ir a Pagos ───────────────────────────────────────────────── */
 .btn-ir-pagos {
     display: inline-block;
     margin-left: 8px;
-    padding: 5px 14px; border-radius: 20px;
-    background: #2B4C7E; color: #fff;
-    font-size: 0.8rem; font-weight: 600;
+    padding: 5px 12px;
+    border-radius: 4px;
+    background: var(--azul);
+    color: #fff;
+    font-size: 0.76rem;
+    font-weight: 600;
     text-decoration: none;
-    transition: background .2s;
+    transition: background .15s;
+    cursor: pointer;
+    border: none;
 }
-.btn-ir-pagos:hover { background: #1e3557; }
+
+.btn-ir-pagos:hover { background: #567ebb; }
+
+/* ─── Responsive ─────────────────────────────────────────────────────── */
+@media (max-width: 600px) {
+    .credito-header { flex-direction: column; }
+    .credito-nums   { align-items: flex-start; }
+    .cuotas-tabla th:nth-child(2),
+    .cuotas-tabla td:nth-child(2) { display: none; }
+    .pagos-wrapper h1 { font-size: 1.3rem; }
+}

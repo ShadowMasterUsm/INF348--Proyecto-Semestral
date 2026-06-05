@@ -159,23 +159,6 @@ BEGIN
 END
 //
 
-CREATE TRIGGER trg_calcular_costo_seguro
-AFTER INSERT ON credito_seguro
-FOR EACH ROW
-BEGIN
-    CALL calcular_costo_seguro(NEW.id_credito, NEW.id_seguro);
-    CALL actualizar_monto_total(NEW.id_credito);
-END
-//
-
-CREATE TRIGGER trg_calcular_costo_seguro_update
-AFTER UPDATE ON credito_seguro
-FOR EACH ROW
-BEGIN
-    CALL calcular_costo_seguro(NEW.id_credito, NEW.id_seguro);
-    CALL actualizar_monto_total(NEW.id_credito);
-END
-//
 
 DELIMITER ;
 

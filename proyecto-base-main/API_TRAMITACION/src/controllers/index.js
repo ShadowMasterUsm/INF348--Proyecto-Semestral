@@ -15,6 +15,10 @@ const crearSimulacion = (req, res) => {
     if (!tipoCredito || !rut || !monto || !cuotas) {
         return res.status(400).json({ ok: false, error: 'Faltan campos obligatorios: tipoCredito, rut, monto y cuotas' });
     }
+    const montoNum = Number(monto);
+    if (montoNum < 1_000_000 || montoNum > 60_000_000) {
+        return res.status(400).json({ ok: false, error: 'El monto debe estar entre $1.000.000 y $60.000.000' });
+    }
     const tasaInteresAnual = Number(tasa_interes_anual) || 12.5;
     const calcularCuota = (monto, cuotas, tasaAnual) => {
         const tasaMensual = tasaAnual / 12 / 100;
@@ -40,7 +44,7 @@ const crearSimulacion = (req, res) => {
         const query = 'INSERT INTO simulacion (rut, id_tipo_credito, monto, cuotas, tasa_interes_anual, incluye_seguro_desgravamen, incluye_seguro_cesantia, fecha_primer_pago, monto_total, monto_cuota) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
         database.query(query, [rutNormalizado, idTipoCredito, monto, cuotas, tasaInteresAnual, seguroDesgravamen ? 1 : 0, seguroCesantia ? 1 : 0, fechaPrimerPago, total, cuota], (err, result) => {
             if (err) { console.error('Error al guardar simulación:', err); return res.status(500).json({ ok: false, error: 'Error al guardar en la BD', detalle: err.message }); }
-            return res.status(201).json({ ok: true, mensaje: 'Simulación guardada correctamente', id_simulacion: result.insertId });
+            return res.status(200).json({ ok: true, mensaje: 'Simulación guardada correctamente', id_simulacion: result.insertId });
         });
     };
     database.query('SELECT id_tipo_credito FROM tipo_credito WHERE LOWER(nombre) = ? LIMIT 1', [tipoCreditoNormalizado], (err, result) => {
@@ -134,10 +138,14 @@ const crearSolicitud = async (req, res) => {
         if (seguroDesgravamen) {
             await promiseDb.query("INSERT IGNORE INTO seguro (id_seguro, nombre, cobertura, tasa, monto_max_cobertura) VALUES (1, 'Seguro de Desgravamen', 'Fallecimiento', 0.05, 100000000)");
             await promiseDb.query("INSERT INTO credito_seguro (id_credito, id_seguro) VALUES (?, 1)", [id_credito]);
+            await promiseDb.query("CALL calcular_costo_seguro(?, 1)", [id_credito]);   
+            await promiseDb.query("CALL actualizar_monto_total(?)", [id_credito]);         
         }
         if (seguroCesantia) {
             await promiseDb.query("INSERT IGNORE INTO seguro (id_seguro, nombre, cobertura, tasa, monto_max_cobertura) VALUES (2, 'Seguro de Cesantía', 'Desempleo', 0.20, 50000000)");
             await promiseDb.query("INSERT INTO credito_seguro (id_credito, id_seguro) VALUES (?, 2)", [id_credito]);
+            await promiseDb.query("CALL calcular_costo_seguro(?, 2)", [id_credito]);
+            await promiseDb.query("CALL actualizar_monto_total(?)", [id_credito]);
         }
         res.status(201).json({ ok: true, mensaje: 'Solicitud creada correctamente', id_credito });
     } catch (error) {
@@ -172,7 +180,7 @@ const obtenerSolicitudes = async (req, res) => {
     }
 };
 
-// ─── NUEVO: Actualizar estado de un crédito ────────────────────────────────────
+// ─── Actualizar estado de un crédito ────────────────────────────────────
 const actualizarEstadoSolicitud = async (req, res) => {
     const promiseDb = database.promise();
     try {
@@ -216,7 +224,7 @@ const actualizarEstadoSolicitud = async (req, res) => {
     }
 };
 
-// ─── NUEVO: Obtener todos los créditos de un RUT (todos los estados) ──────────
+// ─── Obtener todos los créditos de un RUT (todos los estados) ──────────
 const obtenerCreditosPorRut = async (req, res) => {
     const promiseDb = database.promise();
     try {
