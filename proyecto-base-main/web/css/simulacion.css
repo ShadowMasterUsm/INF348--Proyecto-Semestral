@@ -411,3 +411,67 @@ input {
         font-size: 22px;
     }
 }
+/* ── Tabla resumen de simulación ─────────────────────────── */
+.resumen-card {
+    background: #fff;
+    border-radius: 10px;
+    padding: 24px 30px;
+    margin-top: 16px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    max-width: 560px;
+}
+
+.tabla-resumen {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 15px;
+}
+
+.tabla-resumen th,
+.tabla-resumen td {
+    padding: 10px 14px;
+    text-align: left;
+    border-bottom: 1px solid #eef0f4;
+}
+
+.tabla-resumen th {
+    color: #567ebb;
+    font-weight: 600;
+    width: 55%;
+}
+
+.tabla-resumen td {
+    color: #343838;
+}
+
+.tabla-resumen tr:last-child th,
+.tabla-resumen tr:last-child td {
+    border-bottom: none;
+}
+
+/* ── Responsive hamburguesa en simulacion/solicitud ─────── */
+@media (max-width: 768px) {
+    .nav-links {
+        display: none;
+        flex-direction: column;
+        position: absolute;
+        top: 60px;
+        left: 0;
+        width: 100%;
+        background: #567ebb;
+        padding: 10px 0;
+        z-index: 200;
+    }
+    .nav-links[data-open="true"] {
+        display: flex;
+    }
+    .nav-links a {
+        padding: 12px 20px;
+    }
+    .burger {
+        display: block;
+    }
+    .nav-container {
+        position: relative;
+    }
+}

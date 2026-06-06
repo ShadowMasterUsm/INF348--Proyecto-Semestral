@@ -5,12 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ClaroFin - Simulador de Crédito</title>
     <link rel="stylesheet" href="css/simulacion.css">
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
+    <script defer src="js/navbar.js"></script>
     <script defer src="js/simulacion.js"></script>
 </head>
 
 <body>
-    <!-- Navbar -->
     <header class="navbar">
         <div class="nav-container">
             <a href="index.html" class="brand">
@@ -23,9 +22,18 @@
                 <a href="infocontacto.html">CONTACTO</a>
             </nav>
 
-
             <button class="burger" aria-label="Abrir menú" aria-expanded="false">☰</button>
-            <a href="#acceso" class="acceso">ACCESO</a>
+
+            <a href="acceso.html" class="acceso" id="accesoBtn">ACCESO</a>
+
+            <div class="profile" id="profileMenu" style="display:none;">
+                <img src="assets/profile.jpg" alt="Perfil" id="profileBtn" class="profile-icon">
+                <div class="dropdown" id="dropdownMenu">
+                    <button id="logoutBtn">Cerrar sesión</button>
+                    <button id="estUSU">Estados de solicitud</button>
+                    <button id="pagosbtn">Pagos cuotas</button>
+                </div>
+            </div>
         </div>
     </header>
 
@@ -36,98 +44,49 @@
 
         <h2 class="main-title">Simula tu Crédito paso a paso</h2>
 
+        <!-- Paso 1: Ingresos -->
         <section id="paso1" class="paso activo" data-step="1">
-            <h3>Tipo de Crédito</h3>
-            <p>Elige el tipo de crédito que mejor se adapta a lo que necesitas. Así te mostramos opciones que se ajusten a ti.</p>
-            <label for="tipo-credito">Tipo de crédito</label>
-            <select id="tipo-credito" name="tipo-credito">
+            <h3>Tus Ingresos</h3>
+            <p>Cuéntanos cuánto ganas al mes para ajustar la simulación a tu realidad.</p>
+            <label for="renta">Renta mensual</label>
+            <select name="renta" id="renta">
                 <option value="" selected disabled hidden>Selecciona...</option>
-                <option value="consumo">Consumo</option>
+                <option value="A">Menos de $500.000</option>
+                <option value="B">Desde $500.001 a $1.000.000</option>
+                <option value="C">Desde $1.000.001 a $2.000.000</option>
+                <option value="D">Desde $2.000.001 a $3.500.000</option>
+                <option value="E">Más de $3.500.000</option>
             </select>
             <div class="botones">
-                <button class="btn continuar">CONTINUAR</button>
+                <button class="btn continuar" id="btn-continuar-1">CONTINUAR</button>
             </div>
         </section>
 
+        <!-- Paso 2: Monto y Cuotas -->
         <section id="paso2" class="paso inactivo" data-step="2">
-            <h3>Datos Personales</h3>
-            <p>Solo necesitamos algunos datos básicos para personalizar tu simulación. No te preocupes: nunca compartiremos tu información.</p>
-            
-            <div class="campo" style="margin-bottom: 20px;">
-                <label for="documento">¿Quieres ahorrarte digitar? Sube tu documento (PDF o Imagen)</label>
-                <input type="file" id="documento" accept=".pdf, image/png, image/jpeg">
-            </div>
+            <h3>Monto y Cuotas</h3>
+            <p>Indica el monto que necesitas y en cuántas cuotas quieres pagarlo.</p>
 
             <div class="form-grid">
                 <div class="campo">
-                    <label for="rut">RUT</label>
-                    <input id="rut" type="text" placeholder="Ingresa tu RUT">
+                    <label for="monto">Monto a solicitar</label>
+                    <input id="monto" type="text" placeholder="$">
                 </div>
-                
-                
                 <div class="campo">
-                    <label for="renta">Renta mensual</label>
-                    <select name="renta" id="renta">
-                        <option value="" selected disabled hidden>Selecciona...</option>
-                        <option value="A">Menos de $500.000</option>
-                        <option value="B">Desde $500.001 a $1.000.000</option>
-                        <option value="C">Desde $1.000.001 a $2.000.000</option>
-                        <option value="D">Desde $2.000.001 a $3.500.000</option>
-                        <option value="E">Más de $3.500.000</option>
-                    </select>
+                    <label for="cuotas">Número de cuotas</label>
+                    <input id="cuotas" type="number" min="1" max="60" placeholder="1 – 60">
                 </div>
             </div>
 
-            
             <div class="botones">
-                <button class="btn volver">VOLVER</button>
-                <button class="btn continuar">CONTINUAR</button>
+                <button class="btn volver" id="btn-volver-2">VOLVER</button>
+                <button class="btn continuar" id="btn-continuar-2">CONTINUAR</button>
             </div>
         </section>
 
+        <!-- Paso 3: Seguros -->
         <section id="paso3" class="paso inactivo" data-step="3">
-            <h3>Monto a Solicitar</h3>
-            <p>Indica el monto que te gustaría solicitar.</p>
-            <label>Monto</label>
-            <input id="monto" type="text" placeholder="Ingresa un monto">
-
-            <div class="botones">
-                <button class="btn volver">VOLVER</button>
-                <button class="btn continuar">CONTINUAR</button>
-            </div>
-        </section>
-
-        <section id="paso4" class="paso inactivo" data-step="4">
-            <h3>Detalles de tu Crédito</h3>
-            <p>Elige en cuántas cuotas quieres pagar y cuándo comenzar. Nosotros hacemos los cálculos por ti.</p>
-            <label>Número de cuotas</label>
-            <input id="cuotas" type="text" placeholder="Ingresa el número de cuotas">
-
-            <div class="form-grid">
-                <div class="campo">
-                    <label for="mes-pago">Primer mes de pago</label>
-                    <select id="mes-pago">
-                        <option value="" selected disabled hidden>Selecciona...</option>
-                    </select>
-                </div>
-
-                <div class="campo">
-                    <label for="dia-pago">Día de pago</label>
-                    <select id="dia-pago">
-                        <option value="" selected disabled hidden>Selecciona...</option>
-                    </select>
-                </div>    
-                
-            </div>
-            
-            <div class="botones">
-                <button class="btn volver">VOLVER</button>
-                <button class="btn continuar">CONTINUAR</button>
-            </div>
-        </section>
-
-        <section id="paso5" class="paso inactivo" data-step="5">
-            <h3>Seguros Asociados</h3>
+            <h3>Seguros Opcionales</h3>
             <p>¿Quieres mayor tranquilidad? Agrega seguros opcionales para protegerte a ti y a quienes más quieres.</p>
 
             <label class="switch-container">
@@ -152,13 +111,23 @@
                 </div>
             </label>
 
-
             <div class="botones">
-                <button class="btn volver">VOLVER</button>
-                <button class="btn ver-simulacion">VER SIMULACIÓN</button>
-                <button class="btn btn-primary" id="btnSolicitarFinal" style="margin-left: 10px;">SOLICITAR CRÉDITO</button>
+                <button class="btn volver" id="btn-volver-3">VOLVER</button>
+                <button class="btn continuar" id="btn-ver-simulacion">VER SIMULACIÓN</button>
             </div>
-        </section> 
+        </section>
+
+        <!-- Paso 4: Resultado de simulación -->
+        <section id="paso4" class="paso inactivo" data-step="4">
+            <h3>Resultado de tu Simulación</h3>
+            <div id="resumen-simulacion" class="resumen-card">
+                <!-- Se rellena dinámicamente por JS -->
+            </div>
+            <div class="botones" style="margin-top:20px;">
+                <button class="btn volver" id="btn-volver-4">VOLVER</button>
+                <button class="btn continuar" id="btn-solicitar-credito">SOLICITAR CRÉDITO</button>
+            </div>
+        </section>
     </main>
 </body>
 </html>

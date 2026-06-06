@@ -4,16 +4,16 @@ const btnSolicitar = document.querySelector('.btn-primary');
 
 if (btnSimular) {
   btnSimular.addEventListener('click', () => {
-    window.location.href = "simulacion.html?mode=simular";
+    window.location.href = "simulacion.html";
   });
 }
 
 if (btnSolicitar) {
   btnSolicitar.addEventListener('click', () => {
     if (localStorage.getItem("loggedIn") === "true") {
-      window.location.href = "simulacion.html?mode=solicitar";
+      window.location.href = "solicitud.html";
     } else {
-      window.location.href = "acceso.html?redirect=" + encodeURIComponent("simulacion.html?mode=solicitar");
+      window.location.href = "acceso.html?redirect=solicitud.html";
     }
   });
 }
