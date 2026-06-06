@@ -57,6 +57,77 @@ body {
     cursor: pointer;
 }
 
+
+/* ==== Perfil / sesión en navbar ==== */
+.profile {
+    display: none;
+    position: relative;
+    align-items: center;
+}
+
+.profile-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid rgba(255,255,255,0.6);
+}
+
+.dropdown {
+    display: none;
+    position: absolute;
+    top: 46px;
+    right: 0;
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    min-width: 160px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    z-index: 100;
+}
+
+.dropdown.show { display: block; }
+
+.dropdown button {
+    width: 100%;
+    padding: 10px 14px;
+    font-size: 14px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    color: #343838;
+}
+
+.dropdown button:hover { background: #f0f0f0; }
+
+/* ==== Chip de usuario autenticado ==== */
+.user-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255,255,255,0.18);
+    border: 1.5px solid rgba(255,255,255,0.45);
+    color: #fff;
+    padding: 6px 14px 6px 10px;
+    border-radius: 20px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: 0.02em;
+    transition: background 0.18s, border-color 0.18s;
+    white-space: nowrap;
+}
+
+.user-chip:hover {
+    background: rgba(255,255,255,0.28);
+    border-color: rgba(255,255,255,0.7);
+}
+
+.user-chip-icon  { font-size: 0.82rem; }
+.user-chip-label { max-width: 130px; overflow: hidden; text-overflow: ellipsis; }
+.user-chip-arrow { font-size: 0.6rem; opacity: 0.75; margin-left: 2px; }
+
 /* Hero */
 .hero {
     width: 100%;

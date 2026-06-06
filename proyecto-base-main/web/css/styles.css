@@ -301,6 +301,32 @@ body {
   }
 }
 
+
+/* ==== Chip de usuario autenticado ==== */
+.user-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255,255,255,0.18);
+    border: 1.5px solid rgba(255,255,255,0.45);
+    color: #fff;
+    padding: 6px 14px 6px 10px;
+    border-radius: 20px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: 0.02em;
+    transition: background 0.18s, border-color 0.18s;
+    white-space: nowrap;
+}
+.user-chip:hover {
+    background: rgba(255,255,255,0.28);
+    border-color: rgba(255,255,255,0.7);
+}
+.user-chip-icon  { font-size: 0.82rem; }
+.user-chip-label { max-width: 130px; overflow: hidden; text-overflow: ellipsis; }
+.user-chip-arrow { font-size: 0.6rem; opacity: 0.75; margin-left: 2px; }
+
 /* ==== Perfil en navbar ==== */
 .profile {
     display: none; /* se muestra solo si hay sesión */

@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClaroFin — Créditos</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/infocreditos.css">
+    <script defer src="js/navbar.js"></script>
+    <script defer src="js/main.js"></script>
+</head>
+<body>
+
+    <!-- Navbar -->
+    <header class="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="brand">
+                <img src="assets/logo.png" alt="Logo ClaroFin" class="logo">
+            </a>
+            <nav class="nav-links" id="navLinks" data-open="false">
+                <a href="infoseguros.html">SEGUROS</a>
+                <a href="infocreditos.html">CRÉDITOS</a>
+                <a href="infocontacto.html">CONTACTO</a>
+            </nav>
+            <button class="burger" aria-label="Abrir menú" aria-expanded="false">☰</button>
+            <a href="acceso.html" class="acceso" id="accesoBtn">ACCESO</a>
+            <div class="profile" id="profileMenu">
+                <img src="assets/profile.jpg" alt="Perfil" id="profileBtn" class="profile-icon">
+                <div class="dropdown" id="dropdownMenu">
+                    <button id="logoutBtn">Cerrar sesión</button>
+                    <button id="estUSU">Estados de solicitud</button>
+                    <button id="pagosbtn">Pagos cuotas</button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero -->
+    <section class="cred-hero">
+        <div class="cred-hero-eyebrow">Productos financieros</div>
+        <h1><strong>Créditos de consumo</strong><br>hechos a tu medida</h1>
+        <p>Montos flexibles, plazos adaptables y una tasa transparente desde el primer día. Sin letras chicas.</p>
+    </section>
+
+    <!-- Tipos de crédito -->
+    <section class="cred-types">
+        <div class="cred-types-header">
+            <h2>¿Qué tipo de crédito necesitas?</h2>
+            <p>Elige el que mejor se adapte a tu situación y comienza tu simulación en minutos.</p>
+        </div>
+
+        <div class="cred-tipo-grid">
+
+            <div class="cred-tipo-card featured">
+                <div class="cred-tipo-badge">Más solicitado</div>
+                <span class="cred-tipo-icon">💳</span>
+                <h3>Crédito de Consumo</h3>
+                <p>Ideal para gastos personales, viajes, electrodomésticos o cualquier necesidad que tengas ahora. Sin necesidad de justificar el destino.</p>
+                <ul class="cred-tipo-specs">
+                    <li><span>Monto</span><span>$200.000 – $10.000.000</span></li>
+                    <li><span>Plazo</span><span>3 – 60 meses</span></li>
+                    <li><span>Tasa desde</span><span>8,5% anual</span></li>
+                </ul>
+            </div>
+
+            <div class="cred-tipo-card">
+                <span class="cred-tipo-icon">🔧</span>
+                <h3>Crédito para Reparaciones</h3>
+                <p>Financia mejoras en tu hogar, reparaciones urgentes o ampliaciones. Plazos más largos para cuotas más cómodas.</p>
+                <ul class="cred-tipo-specs">
+                    <li><span>Monto</span><span>$500.000 – $15.000.000</span></li>
+                    <li><span>Plazo</span><span>6 – 72 meses</span></li>
+                    <li><span>Tasa desde</span><span>9,0% anual</span></li>
+                </ul>
+            </div>
+
+            <div class="cred-tipo-card">
+                <span class="cred-tipo-icon">🎓</span>
+                <h3>Crédito Educacional</h3>
+                <p>Para cursos, posgrados, capacitaciones o útiles escolares. Invierte en tu futuro con condiciones preferenciales.</p>
+                <ul class="cred-tipo-specs">
+                    <li><span>Monto</span><span>$200.000 – $8.000.000</span></li>
+                    <li><span>Plazo</span><span>3 – 48 meses</span></li>
+                    <li><span>Tasa desde</span><span>7,9% anual</span></li>
+                </ul>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- Proceso -->
+    <section class="cred-proceso">
+        <div class="cred-proceso-inner">
+            <h2>¿Cómo funciona el proceso?</h2>
+            <div class="cred-pasos">
+                <div class="cred-paso">
+                    <div class="cred-paso-num">1</div>
+                    <h4>Simula</h4>
+                    <p>Ingresa el monto y plazo. Ve la cuota al instante, sin comprometerte.</p>
+                </div>
+                <div class="cred-paso">
+                    <div class="cred-paso-num">2</div>
+                    <h4>Solicita</h4>
+                    <p>Completa el formulario con tus datos en menos de 5 minutos.</p>
+                </div>
+                <div class="cred-paso">
+                    <div class="cred-paso-num">3</div>
+                    <h4>Evaluación</h4>
+                    <p>Nuestro equipo revisa tu solicitud y te responde rápido.</p>
+                </div>
+                <div class="cred-paso">
+                    <div class="cred-paso-num">4</div>
+                    <h4>Firma</h4>
+                    <p>Firma electrónicamente desde donde estés, sin ir a ninguna sucursal.</p>
+                </div>
+                <div class="cred-paso">
+                    <div class="cred-paso-num">5</div>
+                    <h4>Recibe</h4>
+                    <p>El dinero se transfiere directamente a tu cuenta bancaria.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Simulador CTA -->
+    <section class="cred-simulador">
+        <div class="cred-simulador-text">
+            <h2>Simula tu crédito<br>antes de solicitarlo</h2>
+            <p>Usa nuestro simulador para ver exactamente cuánto pagarías cada mes. Sin registrarte, sin compromiso. Solo ingresa el monto y el plazo.</p>
+            <a href="simulacion.html?mode=simular" class="cred-simulador-btn">Ir al simulador →</a>
+        </div>
+
+        <div class="cred-simulador-card">
+            <h3>Ejemplo orientativo</h3>
+            <div class="cred-calc-row">
+                <span>Monto solicitado</span>
+                <span>$3.000.000</span>
+            </div>
+            <div class="cred-calc-row">
+                <span>Plazo</span>
+                <span>24 meses</span>
+            </div>
+            <div class="cred-calc-row">
+                <span>Tasa anual</span>
+                <span>10,5%</span>
+            </div>
+            <hr class="cred-calc-divider">
+            <div class="cred-calc-total">
+                <span class="label">Cuota mensual estimada</span>
+                <span class="value">$138.900</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="cred-faq">
+        <div class="cred-faq-inner">
+            <h2>Preguntas frecuentes</h2>
+
+            <div class="cred-faq-item">
+                <div class="cred-faq-q">¿Qué documentos necesito para solicitar un crédito?</div>
+                <div class="cred-faq-a">Solo tu RUT y la información de tu renta mensual. Para montos mayores podríamos solicitar una liquidación de sueldo o comprobante de ingresos.</div>
+            </div>
+
+            <div class="cred-faq-item">
+                <div class="cred-faq-q">¿Puedo pagar anticipadamente?</div>
+                <div class="cred-faq-a">Sí. Puedes realizar pagos adelantados o liquidar el crédito completo en cualquier momento sin costo adicional de prepago.</div>
+            </div>
+
+            <div class="cred-faq-item">
+                <div class="cred-faq-q">¿Cuánto demora la aprobación?</div>
+                <div class="cred-faq-a">La evaluación tarda entre 24 y 48 horas hábiles desde que recibes tu solicitud completa. Te notificamos por correo electrónico.</div>
+            </div>
+
+            <div class="cred-faq-item">
+                <div class="cred-faq-q">¿Qué pasa si no puedo pagar una cuota?</div>
+                <div class="cred-faq-a">Comunícate con nosotros antes del vencimiento. Podemos evaluar una reprogramación o renegociación según tu situación. Si tienes seguro de cesantía, este cubre tus cuotas temporalmente.</div>
+            </div>
+
+            <div class="cred-faq-item">
+                <div class="cred-faq-q">¿La simulación me obliga a solicitar el crédito?</div>
+                <div class="cred-faq-a">No. La simulación es completamente gratuita y sin compromiso. Puedes simular todas las veces que necesites para encontrar la combinación ideal.</div>
+            </div>
+        </div>
+    </section>
+
+</body>
+</html>
