@@ -82,7 +82,7 @@ const obtenerSimulacionPorId = (req, res) => {
 const crearSolicitud = async (req, res) => {
     const promiseDb = database.promise();
     try {
-        const { tipoCredito, rut, monto, cuotas, tasa_interes_anual, mesInicio, diaPago, seguroDesgravamen, seguroCesantia } = req.body;
+        const { tipoCredito, rut, monto, cuotas, tasa_interes_anual, mesInicio, diaPago, seguroDesgravamen, seguroCesantia, num_documento } = req.body;
         if (!tipoCredito || !rut || !monto || !cuotas) return res.status(400).json({ error: 'Faltan campos obligatorios' });
         const rutNormalizado = String(rut).trim();
         const tipoCreditoNormalizado = String(tipoCredito).trim().toLowerCase();
@@ -101,9 +101,14 @@ const crearSolicitud = async (req, res) => {
         await promiseDb.query("INSERT IGNORE INTO comuna (id_comuna, id_region, nombre) VALUES (1, 1, 'Santiago')");
         const [clientes] = await promiseDb.query("SELECT id_cliente FROM cliente WHERE rut = ?", [rutNormalizado]);
         let id_cliente;
-        if (clientes.length > 0) { id_cliente = clientes[0].id_cliente; }
+        if (clientes.length > 0) {
+            id_cliente = clientes[0].id_cliente;
+            if (num_documento) {
+                await promiseDb.query("UPDATE cliente SET num_documento = ? WHERE id_cliente = ?", [num_documento, id_cliente]);
+            }
+        }
         else {
-            const [insertCliente] = await promiseDb.query("INSERT INTO cliente (id_region, id_comuna, rut, nombre, apellido, telefono, correo) VALUES (?, ?, ?, ?, ?, ?, ?)", [1, 1, rutNormalizado, 'Cliente', 'Único', '+56912345678', 'cliente@clarofin.cl']);
+            const [insertCliente] = await promiseDb.query("INSERT INTO cliente (id_region, id_comuna, rut, nombre, apellido, telefono, correo, num_documento) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", [1, 1, rutNormalizado, 'Cliente', 'Único', '+56912345678', 'cliente@clarofin.cl', num_documento || null]);
             id_cliente = insertCliente.insertId;
         }
         const [tipos] = await promiseDb.query("SELECT id_tipo_credito FROM tipo_credito WHERE LOWER(nombre) = ?", [tipoCreditoNormalizado]);
@@ -235,6 +240,7 @@ const obtenerCreditosPorRut = async (req, res) => {
             SELECT
                 c.id_credito,
                 cl.rut,
+                cl.num_documento,
                 c.monto_solicitado as monto,
                 c.numero_cuotas as cuotas,
                 c.tasa_interes_anual,

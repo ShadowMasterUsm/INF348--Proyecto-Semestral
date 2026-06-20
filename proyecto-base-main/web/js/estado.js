@@ -8,6 +8,8 @@ const STORAGE_ANALISTA = 'analista_riesgo_estado';
 const STORAGE_ENVIADAS = 'cliente_solicitudes_enviadas';
 const STORAGE_FIRMADAS = 'cliente_firmadas';
 
+let creditosAPI = [];
+
 // ─── Helpers de localStorage ──────────────────────────────────────────────────
 const leerAnalista  = () => { try { const r = localStorage.getItem(STORAGE_ANALISTA); return r ? JSON.parse(r) : null; } catch { return null; } };
 const leerEnviadas  = () => { try { const r = localStorage.getItem(STORAGE_ENVIADAS); return r ? JSON.parse(r) : []; }  catch { return []; } };
@@ -135,7 +137,7 @@ async function renderTodo() {
 
   // Intentar cargar desde la API
   const ruts = obtenerRutsDesdeLocalStorage();
-  let creditosAPI = [];
+  creditosAPI = [];
 
   if (ruts.length > 0) {
     creditosAPI = await cargarCreditosDesdeAPI(ruts);
@@ -181,34 +183,132 @@ async function renderTodo() {
 // ─── Firma ────────────────────────────────────────────────────────────────────
 let idPendienteFirma = null;
 
-function abrirModal(id) { idPendienteFirma = id; document.getElementById('modalFirma').classList.add('visible'); }
-function cerrarModal()  { idPendienteFirma = null; document.getElementById('modalFirma').classList.remove('visible'); }
+function abrirModal(id) { 
+  idPendienteFirma = id; 
+  const fileInput = document.getElementById('documentoFirma');
+  if (fileInput) fileInput.value = '';
+  const msgOcr = document.getElementById('msgFirmaOcr');
+  if (msgOcr) {
+      msgOcr.textContent = '';
+      msgOcr.style.color = '#7f7f7f';
+  }
+  document.getElementById('modalFirma').classList.add('visible'); 
+}
+
+function cerrarModal()  { 
+  idPendienteFirma = null; 
+  document.getElementById('modalFirma').classList.remove('visible'); 
+}
 
 async function confirmarFirma() {
   if (idPendienteFirma === null) return;
   const idStr   = String(idPendienteFirma);
-  const firmadas = leerFirmadas();
 
-  // Actualizar localStorage del analista para consistencia
-  const analista = leerAnalista();
-  if (analista) {
-    const solicitud = (analista['sin-firmar'] ?? []).find(s => String(normId(s)) === idStr || String(s.id_credito) === idStr);
-    if (solicitud) {
-      analista['sin-firmar'] = (analista['sin-firmar'] ?? []).filter(s => String(normId(s)) !== idStr && String(s.id_credito) !== idStr);
-      if (!Array.isArray(analista.aprobadas)) analista.aprobadas = [];
-      analista.aprobadas.push({ ...solicitud, firmada: true });
-      guardarAnalista(analista);
-    }
+  const fileInput = document.getElementById('documentoFirma');
+  const msgOcr = document.getElementById('msgFirmaOcr');
+  
+  if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+      if (msgOcr) {
+          msgOcr.textContent = "Error: Debes subir la foto de tu carnet para firmar.";
+          msgOcr.style.color = "red";
+      }
+      return;
   }
 
-  firmadas.add(idStr);
-  guardarFirmadas(firmadas);
-  cerrarModal();
-  mostrarToast();
+  const file = fileInput.files[0];
+  if (msgOcr) {
+      msgOcr.textContent = "Procesando firma y verificando carnet (OCR)...";
+      msgOcr.style.color = "#007bff";
+  }
 
-  // Re-renderizar y activar tab "Firmadas" — el botón "Ir a Pagos" queda disponible ahí
-  await renderTodo();
-  activarTab('firmadas');
+  const confirmBtn = document.getElementById('modalConfirmar');
+  const cancelBtn = document.getElementById('modalCancelar');
+  if (confirmBtn) confirmBtn.disabled = true;
+  if (cancelBtn) cancelBtn.disabled = true;
+
+  try {
+      const result = await Tesseract.recognize(file, "spa", { logger: m => console.log(m) });
+      const text = result.data.text;
+
+      const rutRegex = /\d{1,2}\.?\d{3}\.?\d{3}-?[0-9kK]/;
+      const rutMatch = text.match(rutRegex);
+
+      // Find all 9-character alphanumeric blocks and filter out common words
+      const matches = text.match(/\b[A-Z0-9]{3}[.-]?[A-Z0-9]{3}[.-]?[A-Z0-9]{3}\b/gi) || [];
+      const blacklist = ["IDENTIDAD", "DOCUMENTO", "REPUBLICA", "APELLIDOS", "PROFESION", "CATEGORIA", "SIGNATURE"];
+      const docMatch = matches.find(m => {
+          const cleaned = m.replace(/[^A-Z0-9]/ig, "").toUpperCase();
+          const esPalabraComun = /^[A-Z]+$/.test(cleaned) && blacklist.includes(cleaned);
+          const tieneNumeros = /\d/.test(cleaned);
+          const tieneSeparadores = /[.-]/.test(m);
+          return !esPalabraComun && (tieneNumeros || tieneSeparadores);
+      });
+
+      const scannedRut = rutMatch ? rutMatch[0].replace(/[^0-9kK]/g, "").toUpperCase() : "";
+      const scannedDoc = docMatch ? docMatch.replace(/[^A-Z0-9]/ig, "").toUpperCase() : "";
+
+      const creditObj = creditosAPI.find(c => String(c.id_credito) === idStr);
+      let storedRut = "";
+      let storedDoc = "";
+
+      if (creditObj) {
+          storedRut = creditObj.rut ? creditObj.rut.replace(/[^0-9kK]/g, "").toUpperCase() : "";
+          storedDoc = creditObj.num_documento ? creditObj.num_documento.replace(/[^A-Z0-9]/ig, "").toUpperCase() : "";
+      } else {
+          const analista = leerAnalista();
+          const enviadas = leerEnviadas();
+          const solicitud = (analista?.['sin-firmar'] ?? []).find(s => String(normId(s)) === idStr) || 
+                            enviadas.find(s => String(normId(s)) === idStr);
+          if (solicitud) {
+              storedRut = solicitud.rut ? solicitud.rut.replace(/[^0-9kK]/g, "").toUpperCase() : "";
+              storedDoc = solicitud.num_documento ? solicitud.num_documento.replace(/[^A-Z0-9]/ig, "").toUpperCase() : "";
+          }
+      }
+
+      console.log("OCR Resultados - RUT escaneado:", scannedRut, "Doc escaneado:", scannedDoc);
+      console.log("Datos Guardados - RUT guardado:", storedRut, "Doc guardado:", storedDoc);
+
+      const rutCoincide = scannedRut && storedRut && scannedRut === storedRut;
+      const docCoincide = scannedDoc && storedDoc && scannedDoc === storedDoc;
+
+      if (rutCoincide || docCoincide) {
+          const firmadas = leerFirmadas();
+
+          const analista = leerAnalista();
+          if (analista) {
+            const solicitud = (analista['sin-firmar'] ?? []).find(s => String(normId(s)) === idStr || String(s.id_credito) === idStr);
+            if (solicitud) {
+              analista['sin-firmar'] = (analista['sin-firmar'] ?? []).filter(s => String(normId(s)) !== idStr && String(s.id_credito) !== idStr);
+              if (!Array.isArray(analista.aprobadas)) analista.aprobadas = [];
+              analista.aprobadas.push({ ...solicitud, firmada: true });
+              guardarAnalista(analista);
+            }
+          }
+
+          firmadas.add(idStr);
+          guardarFirmadas(firmadas);
+          cerrarModal();
+          mostrarToast();
+
+          await renderTodo();
+          activarTab('firmadas');
+      } else {
+          if (msgOcr) {
+              msgOcr.textContent = "Error: El carnet no coincide con el RUT ni el número de documento registrado.";
+              msgOcr.style.color = "red";
+          }
+          alert("Validación fallida: Cédula de identidad no coincide con el registro del crédito.");
+      }
+  } catch (error) {
+      console.error("Error en OCR:", error);
+      if (msgOcr) {
+          msgOcr.textContent = "Error al procesar la verificación OCR de la imagen.";
+          msgOcr.style.color = "red";
+      }
+  } finally {
+      if (confirmBtn) confirmBtn.disabled = false;
+      if (cancelBtn) cancelBtn.disabled = false;
+  }
 }
 
 function mostrarToast() {
