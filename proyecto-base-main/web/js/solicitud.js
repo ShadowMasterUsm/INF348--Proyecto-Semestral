@@ -78,7 +78,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (pagosbtn) pagosbtn.addEventListener("click", () => { window.location.href = "pagos.html"; });
 
     // ═══════════════════════════════════════════════════════════
-    // OCR — Subida de documento para detectar RUT
+    // OCR — Subida de documento para detectar RUT y Número de Documento
     // ═══════════════════════════════════════════════════════════
     const inputDocumento = document.getElementById("documento");
     if (inputDocumento) {
@@ -98,14 +98,48 @@ document.addEventListener("DOMContentLoaded", () => {
                 .then(({ data: { text } }) => {
                     const rutRegex = /\d{1,2}\.?\d{3}\.?\d{3}-?[0-9kK]/;
                     const rutMatch = text.match(rutRegex);
+
+                    // Find all 9-character alphanumeric blocks and filter out common words
+                    const matches = text.match(/\b[A-Z0-9]{3}[.-]?[A-Z0-9]{3}[.-]?[A-Z0-9]{3}\b/gi) || [];
+                    const blacklist = ["IDENTIDAD", "DOCUMENTO", "REPUBLICA", "APELLIDOS", "PROFESION", "CATEGORIA", "SIGNATURE"];
+                    const docMatch = matches.find(m => {
+                        const cleaned = m.replace(/[^A-Z0-9]/ig, "").toUpperCase();
+                        const esPalabraComun = /^[A-Z]+$/.test(cleaned) && blacklist.includes(cleaned);
+                        const tieneNumeros = /\d/.test(cleaned);
+                        const tieneSeparadores = /[.-]/.test(m);
+                        return !esPalabraComun && (tieneNumeros || tieneSeparadores);
+                    });
+
+                    let detectadoRut = false;
+                    let detectadoDoc = false;
+
                     if (rutMatch) {
                         const inputRut = document.getElementById("rut");
                         inputRut.value = rutMatch[0];
                         inputRut.dispatchEvent(new Event("input"));
-                        p.textContent = "RUT detectado automáticamente desde la imagen.";
+                        detectadoRut = true;
+                    }
+
+                    if (docMatch) {
+                        const inputDoc = document.getElementById("num_documento");
+                        if (inputDoc) {
+                            inputDoc.value = docMatch.replace(/[^A-Z0-9]/ig, "").toUpperCase();
+                            inputDoc.dispatchEvent(new Event("input"));
+                            detectadoDoc = true;
+                        }
+                    }
+
+                    if (detectadoRut && detectadoDoc) {
+                        p.textContent = "RUT y Número de Documento detectados desde la imagen.";
                         p.style.color = "#007bff";
+                    } else if (detectadoRut) {
+                        p.textContent = "RUT detectado desde la imagen. Número de serie no detectado.";
+                        p.style.color = "orange";
+                    } else if (detectadoDoc) {
+                        p.textContent = "Número de serie detectado. RUT no detectado.";
+                        p.style.color = "orange";
                     } else {
-                        p.textContent = "No se pudo detectar el RUT. Intenta con una imagen más clara.";
+                        p.textContent = "No se pudo detectar el RUT ni el Número de Documento. Intenta con otra imagen.";
                         p.style.color = "orange";
                     }
                 })
@@ -128,6 +162,13 @@ document.addEventListener("DOMContentLoaded", () => {
             const cuerpo = value.slice(0, -1).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
             const dv     = value.slice(-1);
             inputRut.value = cuerpo + (dv ? "-" + dv : "");
+        });
+    }
+
+    const inputDoc = document.getElementById("num_documento");
+    if (inputDoc) {
+        inputDoc.addEventListener("input", () => {
+            inputDoc.value = inputDoc.value.replace(/[^A-Za-z0-9]/g, "").toUpperCase().slice(0, 15);
         });
     }
 
@@ -224,10 +265,12 @@ document.addEventListener("DOMContentLoaded", () => {
         if (index === 1) {
             const rut       = document.getElementById("rut");
             const renta     = document.getElementById("renta");
+            const numDoc    = document.getElementById("num_documento");
             const documento = document.getElementById("documento");
             const tieneDoc  = documento && documento.files.length > 0;
             if (!tieneDoc) {
                 if (!rut.value.trim())  { mostrarError(rut,   "Ingresa un RUT válido o sube tu documento"); ok = false; }
+                if (!numDoc.value.trim()) { mostrarError(numDoc, "Ingresa tu número de documento"); ok = false; }
                 if (!renta.value)       { mostrarError(renta, "Selecciona tu renta mensual o sube tu documento"); ok = false; }
             }
         }
@@ -285,9 +328,13 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!validarPaso(pasoActual)) return;
 
             let rutValue = document.getElementById("rut").value;
+            let numDocValue = document.getElementById("num_documento").value;
             const documento = document.getElementById("documento");
             if (documento && documento.files.length > 0 && !rutValue.trim()) {
                 rutValue = "11.111.111-1";
+            }
+            if (documento && documento.files.length > 0 && !numDocValue.trim()) {
+                numDocValue = "123456789";
             }
 
             const montoIngresado  = parseInt(document.getElementById("monto").value.replace(/\D/g, ""));
@@ -296,6 +343,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const data = {
                 tipoCredito: document.getElementById("tipo-credito").value,
                 rut: rutValue,
+                num_documento: numDocValue,
                 renta: document.getElementById("renta").value || "C",
                 monto: montoIngresado,
                 cuotas: cuotasIngresadas,

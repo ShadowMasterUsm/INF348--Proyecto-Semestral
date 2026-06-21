@@ -31,6 +31,7 @@ CREATE TABLE IF NOT EXISTS cliente (
     telefono VARCHAR(15) NOT NULL,
     correo VARCHAR(50) NOT NULL,
     password VARCHAR(255),
+    num_documento VARCHAR(20) NULL,
     FOREIGN KEY (id_region) REFERENCES region(id_region) ON DELETE CASCADE,
     FOREIGN KEY (id_comuna) REFERENCES comuna(id_comuna) ON DELETE CASCADE
 );

@@ -6,6 +6,7 @@
     <title>ClaroFin - Estado de Solicitudes</title>
     <link rel="stylesheet" href="css/styles.css">
     <link rel="stylesheet" href="css/estado.css">
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
     <script defer src="js/navbar.js"></script>
 </head>
 
@@ -69,6 +70,13 @@
             <div class="modal-icon">✍️</div>
             <h3>Firmar Solicitud</h3>
             <p>Al firmar aceptas los términos y condiciones del crédito aprobado.<br>Esta acción no se puede deshacer.</p>
+            
+            <div class="campo" style="margin: 15px 0; text-align: left;">
+                <label for="documentoFirma" style="font-weight: bold; display: block; margin-bottom: 5px; color: #343838; font-size: 14px;">Sube la foto de tu carnet para validar tu identidad:</label>
+                <input type="file" id="documentoFirma" accept="image/png, image/jpeg" style="width: 100%; padding: 8px; border: 1px solid #2B4C7E; border-radius: 4px; box-sizing: border-box;">
+                <p id="msgFirmaOcr" style="font-size: 0.9em; margin-top: 5px; color: #7f7f7f;"></p>
+            </div>
+
             <div class="modal-actions">
                 <button class="modal-btn-cancel" id="modalCancelar">Cancelar</button>
                 <button class="modal-btn-confirm" id="modalConfirmar">Firmar</button>
