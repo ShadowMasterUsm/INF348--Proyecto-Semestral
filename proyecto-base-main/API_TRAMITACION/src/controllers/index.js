@@ -1,5 +1,169 @@
 const database = require('../db');
 
+// ─── Motor de recomendaciones de crédito (basado en reglas) ──────────────────
+// Toma la renta (banda A-E) y un historial simple de créditos del cliente
+// (cantidad, estados, monto máximo aprobado) y entrega varias opciones de
+// CANTIDAD DE DINERO a solicitar (no tipos de producto): para distintos
+// plazos, calcula el rango de monto [mínimo, máximo] que mantiene la
+// probabilidad de aprobación (score) sobre un umbral mínimo (60%).
+
+// Bandas de renta declaradas en el formulario de solicitud:
+// A: < 500.000 | B: 500.001 - 1.000.000 | C: 1.000.001 - 2.000.000
+// D: 2.000.001 - 3.500.000 | E: > 3.500.000
+const RENTA_REFERENCIA = {
+    A: 400000,
+    B: 750000,
+    C: 1500000,
+    D: 2750000,
+    E: 4000000
+};
+
+// Límites genéricos de crédito (no dependen de un tipo de producto) y tasa
+// base de referencia, usada como punto de partida antes de los ajustes por
+// historial del cliente.
+const LIMITES_CREDITO = {
+    montoMin: 200000,
+    montoMax: 10000000,
+    tasaBase: 8.5
+};
+
+// Plazos en meses que se evalúan como opciones de recomendación.
+const PLAZOS_CANDIDATOS = [12, 24, 36, 48, 60];
+
+// Cálculo de cuota (sistema francés) — misma fórmula que crearSolicitud
+function calcularCuotaRecomendacion(monto, cuotas, tasaAnual) {
+    const tasaMensual = tasaAnual / 12 / 100;
+    if (tasaMensual === 0) return monto / cuotas;
+    return (monto * tasaMensual) / (1 - Math.pow(1 + tasaMensual, -cuotas));
+}
+
+// Capacidad de pago estimada: como máximo el 30% de la renta mensual puede ir a la cuota.
+function capacidadPagoMensual(renta) {
+    const rentaNum = RENTA_REFERENCIA[renta] || RENTA_REFERENCIA.C;
+    return Math.round(rentaNum * 0.3);
+}
+
+// Historial del cliente → ajustes al score y a la tasa
+// historial: { totalCreditos, aprobados, rechazados, pagados, montoMaxAprobado }
+function evaluarHistorial(historial) {
+    const h = historial || { totalCreditos: 0, aprobados: 0, rechazados: 0, pagados: 0, montoMaxAprobado: 0 };
+    let ajusteScore = 0;
+    let ajusteTasa = 0;
+    let perfil = 'nuevo';
+
+    if (h.totalCreditos === 0) {
+        perfil = 'nuevo';
+    } else {
+        const tasaAprobacion = h.aprobados / h.totalCreditos;
+        if (h.pagados > 0) {
+            ajusteScore += Math.min(15, h.pagados * 5);
+            ajusteTasa -= Math.min(1.5, h.pagados * 0.5);
+            perfil = 'cliente_cumplidor';
+        }
+        if (h.rechazados > 0 && tasaAprobacion < 0.5) {
+            ajusteScore -= Math.min(20, h.rechazados * 8);
+            ajusteTasa += Math.min(2, h.rechazados * 0.7);
+            perfil = 'riesgo_alto';
+        } else if (h.aprobados > 0 && perfil !== 'cliente_cumplidor') {
+            ajusteScore += 5;
+            perfil = 'cliente_recurrente';
+        }
+    }
+
+    return { ajusteScore, ajusteTasa, perfil };
+}
+
+// Score de elegibilidad (0-100) para una cuota dada
+function calcularScoreRecomendacion({ cuota, capacidadPago, ajusteScore }) {
+    const ratioCuotaCapacidad = capacidadPago > 0 ? cuota / capacidadPago : 1;
+    let base = 100 - Math.round(ratioCuotaCapacidad * 60);
+    base += ajusteScore;
+    return Math.max(5, Math.min(98, Math.round(base)));
+}
+
+// Umbral mínimo de probabilidad de aprobación que debe cumplir el rango recomendado.
+const SCORE_MINIMO_RECOMENDADO = 60;
+
+// A partir de una cuota mensual, calcula el monto máximo que esa cuota
+// alcanza a financiar a un plazo y tasa dados (anualidad inversa).
+function montoDesdeCuota(cuota, plazo, tasaAnual) {
+    const tasaMensual = tasaAnual / 12 / 100;
+    if (tasaMensual === 0) return cuota * plazo;
+    return cuota * (1 - Math.pow(1 + tasaMensual, -plazo)) / tasaMensual;
+}
+
+// Calcula el rango de monto [mínimo, máximo que mantiene el score sobre
+// SCORE_MINIMO_RECOMENDADO] para un plazo dado. Despeje: score = 100 -
+// round(ratio*60) + ajusteScore, con ratio = cuota/capacidadPago. Para
+// score >= scoreMinimo:  ratio <= (100 + ajusteScore - scoreMinimo) / 60
+// Esa cuota máxima se traduce a un monto máximo según plazo y tasa.
+function calcularRangoPorPlazo(capacidadPago, tasaAnual, ajusteScore, plazo) {
+    const ratioMax = Math.max(0, (100 + ajusteScore - SCORE_MINIMO_RECOMENDADO) / 60);
+    const cuotaMaxima = ratioMax * capacidadPago;
+
+    const montoMaximoCalculado = montoDesdeCuota(cuotaMaxima, plazo, tasaAnual);
+    const montoMaximo = Math.min(
+        LIMITES_CREDITO.montoMax,
+        Math.max(LIMITES_CREDITO.montoMin, Math.round(montoMaximoCalculado / 50000) * 50000)
+    );
+    const montoMinimo = Math.min(LIMITES_CREDITO.montoMin, montoMaximo);
+
+    const cuotaEnMontoMaximo = calcularCuotaRecomendacion(montoMaximo, plazo, tasaAnual);
+    const cuotaEnMontoMinimo = calcularCuotaRecomendacion(montoMinimo, plazo, tasaAnual);
+
+    const scoreEnMontoMaximo = calcularScoreRecomendacion({ cuota: cuotaEnMontoMaximo, capacidadPago, ajusteScore });
+
+    return {
+        plazo,
+        montoMinimo,
+        montoMaximo,
+        tasaAnual,
+        cuotaEnMontoMaximo: Math.round(cuotaEnMontoMaximo),
+        cuotaEnMontoMinimo: Math.round(cuotaEnMontoMinimo),
+        scoreElegibilidad: scoreEnMontoMaximo,
+        cumpleScoreMinimo: scoreEnMontoMaximo >= SCORE_MINIMO_RECOMENDADO
+    };
+}
+
+// Genera recomendaciones de CANTIDAD DE DINERO para un cliente (sin tipo de
+// producto): una opción por cada plazo evaluado, cada una con su rango de
+// monto recomendado y su probabilidad de aprobación estimada.
+// params: { renta: 'A'..'E', historial }
+// devuelve: { capacidadPagoMensual, perfilCliente, scoreMinimoObjetivo, recomendaciones: [...] }
+function generarRecomendaciones({ renta, historial }) {
+    const capacidadPago = capacidadPagoMensual(renta);
+    const { ajusteScore, ajusteTasa, perfil } = evaluarHistorial(historial);
+    const tasaAnual = Math.max(1, Math.round((LIMITES_CREDITO.tasaBase + ajusteTasa) * 10) / 10);
+
+    const recomendaciones = PLAZOS_CANDIDATOS.map((plazo) => {
+        const rango = calcularRangoPorPlazo(capacidadPago, tasaAnual, ajusteScore, plazo);
+        return {
+            montoMinimoRecomendado: rango.montoMinimo,
+            montoMaximoRecomendado: rango.montoMaximo,
+            plazoSugerido: rango.plazo,
+            tasaInteresAnual: rango.tasaAnual,
+            cuotaEnMontoMaximo: rango.cuotaEnMontoMaximo,
+            cuotaEnMontoMinimo: rango.cuotaEnMontoMinimo,
+            scoreElegibilidad: rango.scoreElegibilidad,
+            cumpleScoreMinimo: rango.cumpleScoreMinimo,
+            mensaje: `Te recomendamos un crédito entre $${rango.montoMinimo.toLocaleString('es-CL')} y $${rango.montoMaximo.toLocaleString('es-CL')}, en ${rango.plazo} cuotas, con ${rango.scoreElegibilidad}% de probabilidad de aprobación.`
+        };
+    })
+    // Solo se muestran opciones que efectivamente cumplen el umbral de aprobación;
+    // si ninguna lo cumple (caso extremo de renta muy baja + alto riesgo), se
+    // muestra igual la mejor disponible para no dejar al cliente sin información.
+    .filter((r, _, arr) => r.cumpleScoreMinimo || !arr.some(x => x.cumpleScoreMinimo));
+
+    recomendaciones.sort((a, b) => a.plazoSugerido - b.plazoSugerido);
+
+    return {
+        capacidadPagoMensual: capacidadPago,
+        perfilCliente: perfil,
+        scoreMinimoObjetivo: SCORE_MINIMO_RECOMENDADO,
+        recomendaciones
+    };
+}
+
 // ─── Ejemplo de tabla (se puede eliminar) ─────────────────────────────────────
 const createTable = (req, res) => {
     const query = 'CREATE TABLE IF NOT EXISTS user(id int AUTO_INCREMENT, firstname VARCHAR(50), lastname VARCHAR(50), email VARCHAR(50), PRIMARY KEY(id))';
@@ -423,6 +587,54 @@ const obtenerPagosPorCredito = async (req, res) => {
     }
 };
 
+// ─── Recomendaciones personalizadas de crédito ───────────────────────────────
+// GET /recomendaciones?rut=...&renta=A..E
+const obtenerRecomendaciones = async (req, res) => {
+    const promiseDb = database.promise();
+    try {
+        const { rut, renta } = req.query;
+
+        const rentasValidas = ['A', 'B', 'C', 'D', 'E'];
+        const rentaNormalizada = (renta || '').toUpperCase();
+        if (!rentasValidas.includes(rentaNormalizada)) {
+            return res.status(400).json({ ok: false, error: `Renta inválida. Valores permitidos: ${rentasValidas.join(', ')}` });
+        }
+
+        // Historial del cliente (si entrega RUT): cantidad de créditos por estado
+        // y el monto máximo que alguna vez le aprobaron, para ajustar tasa y score.
+        let historial = { totalCreditos: 0, aprobados: 0, rechazados: 0, pagados: 0, montoMaxAprobado: 0 };
+        if (rut) {
+            const rutNormalizado = rut.replace(/\./g, '').trim();
+            const [rows] = await promiseDb.query(`
+                SELECT c.estado, c.monto_solicitado
+                FROM credito c
+                JOIN cliente cl ON c.id_cliente = cl.id_cliente
+                WHERE REPLACE(cl.rut, '.', '') = ?
+            `, [rutNormalizado]);
+
+            historial.totalCreditos = rows.length;
+            historial.aprobados = rows.filter(r => r.estado === 'APROBADO' || r.estado === 'PAGADO').length;
+            historial.rechazados = rows.filter(r => r.estado === 'RECHAZADO').length;
+            historial.pagados = rows.filter(r => r.estado === 'PAGADO').length;
+            historial.montoMaxAprobado = rows
+                .filter(r => r.estado === 'APROBADO' || r.estado === 'PAGADO')
+                .reduce((max, r) => Math.max(max, Number(r.monto_solicitado) || 0), 0);
+        }
+
+        const resultado = generarRecomendaciones({ renta: rentaNormalizada, historial });
+
+        return res.status(200).json({
+            ok: true,
+            rut: rut || null,
+            renta: rentaNormalizada,
+            ...resultado
+        });
+    } catch (error) {
+        console.error('Error al generar recomendaciones:', error);
+        return res.status(500).json({ ok: false, error: 'Error interno al generar recomendaciones', detalle: error.message });
+    }
+};
+
 module.exports = {
     createTable,
     crearSimulacion,
@@ -435,7 +647,8 @@ module.exports = {
     validarCliente,
     registrarCliente,
     registrarPago,
-    obtenerPagosPorCredito
+    obtenerPagosPorCredito,
+    obtenerRecomendaciones
 };
 
 

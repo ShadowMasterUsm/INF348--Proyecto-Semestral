@@ -25,4 +25,7 @@ router.post('/cliente/registrar', index.registrarCliente);
 router.post('/pagos', index.registrarPago);
 router.get('/pagos/:id_credito', index.obtenerPagosPorCredito);
 
+// Recomendaciones personalizadas de crédito
+router.get('/recomendaciones', index.obtenerRecomendaciones);
+
 module.exports = router;
