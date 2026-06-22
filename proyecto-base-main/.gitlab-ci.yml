@@ -1,0 +1,12 @@
+sonarcloud-check:
+  image: sonarsource/sonar-scanner-cli:latest
+  variables:
+    SONAR_HOST_URL: "https://sonarcloud.io"
+    SONAR_TOKEN: "ee985cd897a75b01987be9e4e6ce3d6e9f5c9d0d"
+  script:
+    - sonar-scanner
+      -Dsonar.projectKey=grupo09_grupo09-sistema-de-tramitacion
+      -Dsonar.organization=grupo09
+      -Dsonar.sources=./proyecto-base-main/API_TRAMITACION/src
+  only:
+    - main
