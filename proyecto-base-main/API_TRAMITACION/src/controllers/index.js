@@ -242,54 +242,83 @@ const obtenerSimulacionPorId = (req, res) => {
     });
 };
 
+// ─── Helpers para crearSolicitud ──────────────────────────────────────────────
+function calcularFechaPrimerPago(mesInicio, diaPago) {
+    if (!mesInicio || !diaPago) return new Date().toISOString().slice(0, 10);
+    const hoy = new Date();
+    const mes = Number(mesInicio);
+    const dia = Number(diaPago);
+    if (Number.isNaN(mes) || Number.isNaN(dia)) return new Date().toISOString().slice(0, 10);
+    const anio = hoy.getMonth() + 1 <= mes ? hoy.getFullYear() : hoy.getFullYear() + 1;
+    const fecha = new Date(anio, mes - 1, dia);
+    if (Number.isNaN(fecha.getTime())) return new Date().toISOString().slice(0, 10);
+    return fecha.toISOString().slice(0, 10);
+}
+
+async function obtenerOCrearCliente(promiseDb, rut, num_documento) {
+    const [clientes] = await promiseDb.query("SELECT id_cliente FROM cliente WHERE rut = ?", [rut]);
+    if (clientes.length > 0) {
+        if (num_documento) {
+            await promiseDb.query("UPDATE cliente SET num_documento = ? WHERE id_cliente = ?", [num_documento, clientes[0].id_cliente]);
+        }
+        return clientes[0].id_cliente;
+    }
+    const [insertCliente] = await promiseDb.query(
+        "INSERT INTO cliente (id_region, id_comuna, rut, nombre, apellido, telefono, correo, num_documento) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        [1, 1, rut, 'Cliente', 'Único', '+56912345678', 'cliente@clarofin.cl', num_documento || null]
+    );
+    return insertCliente.insertId;
+}
+
+async function obtenerOCrearTipoCredito(promiseDb, tipoCredito) {
+    const [tipos] = await promiseDb.query("SELECT id_tipo_credito FROM tipo_credito WHERE LOWER(nombre) = ?", [tipoCredito]);
+    if (tipos.length > 0) return tipos[0].id_tipo_credito;
+    const [insertTipo] = await promiseDb.query(
+        "INSERT INTO tipo_credito (nombre, descripcion) VALUES (?, ?)",
+        [tipoCredito, 'Creado desde solicitud']
+    );
+    return insertTipo.insertId;
+}
+
+async function obtenerOCrearAnalista(promiseDb) {
+    const [analistas] = await promiseDb.query("SELECT id_analista FROM analista LIMIT 1");
+    if (analistas.length > 0) return analistas[0].id_analista;
+    const [insertAnalista] = await promiseDb.query(
+        "INSERT INTO analista (rut, nombre, apellido, correo) VALUES (?, ?, ?, ?)",
+        ['11111111-1', 'Analista', 'Principal', 'analista@clarofin.cl']
+    );
+    return insertAnalista.insertId;
+}
+
+async function aplicarSeguro(promiseDb, id_credito, id_seguro, nombre, cobertura, tasa, monto_max) {
+    await promiseDb.query(
+        "INSERT IGNORE INTO seguro (id_seguro, nombre, cobertura, tasa, monto_max_cobertura) VALUES (?, ?, ?, ?, ?)",
+        [id_seguro, nombre, cobertura, tasa, monto_max]
+    );
+    await promiseDb.query("INSERT INTO credito_seguro (id_credito, id_seguro) VALUES (?, ?)", [id_credito, id_seguro]);
+    await promiseDb.query("CALL calcular_costo_seguro(?, ?)", [id_credito, id_seguro]);
+    await promiseDb.query("CALL actualizar_monto_total(?)", [id_credito]);
+}
+
 // ─── Solicitud ────────────────────────────────────────────────────────────────
 const crearSolicitud = async (req, res) => {
     const promiseDb = database.promise();
     try {
         const { tipoCredito, rut, monto, cuotas, tasa_interes_anual, mesInicio, diaPago, seguroDesgravamen, seguroCesantia, num_documento } = req.body;
         if (!tipoCredito || !rut || !monto || !cuotas) return res.status(400).json({ error: 'Faltan campos obligatorios' });
+
         const rutNormalizado = String(rut).trim();
         const tipoCreditoNormalizado = String(tipoCredito).trim().toLowerCase();
         const tasaInteresAnual = Number(tasa_interes_anual) || 12.5;
-        let fechaPrimerPago = null;
-        if (mesInicio && diaPago) {
-            const hoy = new Date(); const mes = Number(mesInicio); const dia = Number(diaPago);
-            if (!Number.isNaN(mes) && !Number.isNaN(dia)) {
-                const anio = hoy.getMonth() + 1 <= mes ? hoy.getFullYear() : hoy.getFullYear() + 1;
-                const fecha = new Date(anio, mes - 1, dia);
-                if (!Number.isNaN(fecha.getTime())) fechaPrimerPago = fecha.toISOString().slice(0, 10);
-            }
-        }
-        if (!fechaPrimerPago) fechaPrimerPago = new Date().toISOString().slice(0, 10);
+        const fechaPrimerPago = calcularFechaPrimerPago(mesInicio, diaPago);
+
         await promiseDb.query("INSERT IGNORE INTO region (id_region, nombre) VALUES (1, 'Región Metropolitana')");
         await promiseDb.query("INSERT IGNORE INTO comuna (id_comuna, id_region, nombre) VALUES (1, 1, 'Santiago')");
-        const [clientes] = await promiseDb.query("SELECT id_cliente FROM cliente WHERE rut = ?", [rutNormalizado]);
-        let id_cliente;
-        if (clientes.length > 0) {
-            id_cliente = clientes[0].id_cliente;
-            if (num_documento) {
-                await promiseDb.query("UPDATE cliente SET num_documento = ? WHERE id_cliente = ?", [num_documento, id_cliente]);
-            }
-        }
-        else {
-            const [insertCliente] = await promiseDb.query("INSERT INTO cliente (id_region, id_comuna, rut, nombre, apellido, telefono, correo, num_documento) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", [1, 1, rutNormalizado, 'Cliente', 'Único', '+56912345678', 'cliente@clarofin.cl', num_documento || null]);
-            id_cliente = insertCliente.insertId;
-        }
-        const [tipos] = await promiseDb.query("SELECT id_tipo_credito FROM tipo_credito WHERE LOWER(nombre) = ?", [tipoCreditoNormalizado]);
-        let id_tipo_credito;
-        if (tipos.length > 0) { id_tipo_credito = tipos[0].id_tipo_credito; }
-        else {
-            const [insertTipo] = await promiseDb.query("INSERT INTO tipo_credito (nombre, descripcion) VALUES (?, ?)", [tipoCreditoNormalizado, 'Creado desde solicitud']);
-            id_tipo_credito = insertTipo.insertId;
-        }
-        const [analistas] = await promiseDb.query("SELECT id_analista FROM analista LIMIT 1");
-        let id_analista;
-        if (analistas.length > 0) { id_analista = analistas[0].id_analista; }
-        else {
-            const [insertAnalista] = await promiseDb.query("INSERT INTO analista (rut, nombre, apellido, correo) VALUES (?, ?, ?, ?)", ['11111111-1', 'Analista', 'Principal', 'analista@clarofin.cl']);
-            id_analista = insertAnalista.insertId;
-        }
-        // Calcular cuota y total (sistema francés)
+
+        const id_cliente = await obtenerOCrearCliente(promiseDb, rutNormalizado, num_documento);
+        const id_tipo_credito = await obtenerOCrearTipoCredito(promiseDb, tipoCreditoNormalizado);
+        const id_analista = await obtenerOCrearAnalista(promiseDb);
+
         const tasaMensual = tasaInteresAnual / 12 / 100;
         const montoNum = Number(monto);
         const cuotasNum = Number(cuotas);
@@ -304,18 +333,14 @@ const crearSolicitud = async (req, res) => {
         );
         const id_credito = insertCredito.insertId;
         await promiseDb.query("INSERT INTO tramite (id_credito, id_analista, etapa) VALUES (?, ?, 'RECEPCION')", [id_credito, id_analista]);
+
         if (seguroDesgravamen) {
-            await promiseDb.query("INSERT IGNORE INTO seguro (id_seguro, nombre, cobertura, tasa, monto_max_cobertura) VALUES (1, 'Seguro de Desgravamen', 'Fallecimiento', 0.05, 100000000)");
-            await promiseDb.query("INSERT INTO credito_seguro (id_credito, id_seguro) VALUES (?, 1)", [id_credito]);
-            await promiseDb.query("CALL calcular_costo_seguro(?, 1)", [id_credito]);   
-            await promiseDb.query("CALL actualizar_monto_total(?)", [id_credito]);         
+            await aplicarSeguro(promiseDb, id_credito, 1, 'Seguro de Desgravamen', 'Fallecimiento', 0.05, 100000000);
         }
         if (seguroCesantia) {
-            await promiseDb.query("INSERT IGNORE INTO seguro (id_seguro, nombre, cobertura, tasa, monto_max_cobertura) VALUES (2, 'Seguro de Cesantía', 'Desempleo', 0.20, 50000000)");
-            await promiseDb.query("INSERT INTO credito_seguro (id_credito, id_seguro) VALUES (?, 2)", [id_credito]);
-            await promiseDb.query("CALL calcular_costo_seguro(?, 2)", [id_credito]);
-            await promiseDb.query("CALL actualizar_monto_total(?)", [id_credito]);
+            await aplicarSeguro(promiseDb, id_credito, 2, 'Seguro de Cesantía', 'Desempleo', 0.20, 50000000);
         }
+
         res.status(201).json({ ok: true, mensaje: 'Solicitud creada correctamente', id_credito });
     } catch (error) {
         console.error('Error al crear solicitud:', error);
