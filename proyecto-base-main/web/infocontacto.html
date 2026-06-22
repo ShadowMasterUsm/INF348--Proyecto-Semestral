@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClaroFin — Contacto</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/infocontacto.css">
+    <script defer src="js/navbar.js"></script>
+    <script defer src="js/main.js"></script>
+</head>
+<body>
+
+    <!-- Navbar -->
+    <header class="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="brand">
+                <img src="assets/logo.png" alt="Logo ClaroFin" class="logo">
+            </a>
+            <nav class="nav-links" id="navLinks" data-open="false">
+                <a href="infoseguros.html">SEGUROS</a>
+                <a href="infocreditos.html">CRÉDITOS</a>
+                <a href="infocontacto.html">CONTACTO</a>
+            </nav>
+            <button class="burger" aria-label="Abrir menú" aria-expanded="false">☰</button>
+            <a href="acceso.html" class="acceso" id="accesoBtn">ACCESO</a>
+            <div class="profile" id="profileMenu">
+                <img src="assets/profile.jpg" alt="Perfil" id="profileBtn" class="profile-icon">
+                <div class="dropdown" id="dropdownMenu">
+                    <button id="logoutBtn">Cerrar sesión</button>
+                    <button id="estUSU">Estados de solicitud</button>
+                    <button id="pagosbtn">Pagos cuotas</button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero -->
+    <section class="cont-hero">
+        <div class="cont-hero-eyebrow">Estamos para ayudarte</div>
+        <h1>¿En qué podemos<br>ayudarte hoy?</h1>
+        <p>Nuestro equipo responde en menos de 24 horas. Elige el canal que más te acomode.</p>
+    </section>
+
+    <!-- Layout principal -->
+    <div class="cont-main">
+
+        <!-- Columna izquierda: canales + horarios -->
+        <div class="cont-info">
+            <h2>Canales de atención</h2>
+
+            <div class="cont-canales">
+                <div class="cont-canal">
+                    <div class="cont-canal-icon">📧</div>
+                    <div class="cont-canal-body">
+                        <h4>Correo electrónico</h4>
+                        <p>Para consultas no urgentes.<br>
+                        <a href="mailto:contacto@clarofin.cl">contacto@clarofin.cl</a></p>
+                    </div>
+                </div>
+
+                <div class="cont-canal">
+                    <div class="cont-canal-icon">📞</div>
+                    <div class="cont-canal-body">
+                        <h4>Teléfono</h4>
+                        <p>Atención en horario de oficina.<br>
+                        <a href="tel:+56221234567">+56 2 2123 4567</a></p>
+                    </div>
+                </div>
+
+                <div class="cont-canal">
+                    <div class="cont-canal-icon">💬</div>
+                    <div class="cont-canal-body">
+                        <h4>Chat en línea</h4>
+                        <p>Respuesta inmediata durante días hábiles. Disponible desde el inicio.</p>
+                    </div>
+                </div>
+
+                <div class="cont-canal">
+                    <div class="cont-canal-icon">📍</div>
+                    <div class="cont-canal-body">
+                        <h4>Oficina</h4>
+                        <p>Av. Providencia 1234, piso 7<br>Santiago, Chile</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="cont-horarios">
+                <h4>Horarios de atención</h4>
+                <div class="cont-horario-row">
+                    <span>Lunes a viernes</span>
+                    <span>9:00 – 18:30</span>
+                </div>
+                <div class="cont-horario-row">
+                    <span>Sábados</span>
+                    <span>10:00 – 14:00</span>
+                </div>
+                <div class="cont-horario-row">
+                    <span>Domingos y festivos</span>
+                    <span>Cerrado</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Columna derecha: formulario -->
+        <div class="cont-form-wrap">
+            <h2>Escríbenos directamente</h2>
+            <p class="cont-form-sub">Completa el formulario y te responderemos antes de 24 horas hábiles.</p>
+
+            <div class="cont-form-grid">
+                <div class="cont-field">
+                    <label for="cf-nombre">Nombre</label>
+                    <input type="text" id="cf-nombre" placeholder="Tu nombre">
+                </div>
+                <div class="cont-field">
+                    <label for="cf-apellido">Apellido</label>
+                    <input type="text" id="cf-apellido" placeholder="Tu apellido">
+                </div>
+                <div class="cont-field">
+                    <label for="cf-email">Correo electrónico</label>
+                    <input type="email" id="cf-email" placeholder="tu@correo.com">
+                </div>
+                <div class="cont-field">
+                    <label for="cf-tel">Teléfono (opcional)</label>
+                    <input type="tel" id="cf-tel" placeholder="+56 9 XXXX XXXX">
+                </div>
+                <div class="cont-field full">
+                    <label for="cf-asunto">Asunto</label>
+                    <select id="cf-asunto">
+                        <option value="" disabled selected hidden>Selecciona un tema...</option>
+                        <option>Consulta sobre créditos</option>
+                        <option>Consulta sobre seguros</option>
+                        <option>Estado de mi solicitud</option>
+                        <option>Problemas con mi cuenta</option>
+                        <option>Reclamo o sugerencia</option>
+                        <option>Otro</option>
+                    </select>
+                </div>
+                <div class="cont-field full">
+                    <label for="cf-mensaje">Mensaje</label>
+                    <textarea id="cf-mensaje" placeholder="Cuéntanos en qué podemos ayudarte..."></textarea>
+                </div>
+            </div>
+
+            <button class="cont-form-submit" id="cfSubmit">Enviar mensaje</button>
+            <p class="cont-form-nota">Tu información es confidencial y nunca será compartida con terceros.</p>
+            <div class="cont-toast" id="cfToast">✅ Mensaje enviado. Te responderemos pronto.</div>
+        </div>
+    </div>
+
+    <!-- FAQ rápido -->
+    <section class="cont-faq">
+        <h2>Respuestas rápidas</h2>
+        <div class="cont-faq-grid">
+            <div class="cont-faq-item">
+                <h4>¿Dónde veo el estado de mi solicitud?</h4>
+                <p>Inicia sesión y accede a "Mis Solicitudes" desde el menú de tu cuenta. Allí verás el estado en tiempo real.</p>
+            </div>
+            <div class="cont-faq-item">
+                <h4>¿Cómo pago mis cuotas?</h4>
+                <p>Desde la sección "Pagos cuotas" de tu cuenta puedes ver el detalle y realizar el seguimiento de tus cuotas.</p>
+            </div>
+            <div class="cont-faq-item">
+                <h4>¿Puedo modificar mi solicitud?</h4>
+                <p>Solo si está en estado Pendiente. Contáctanos a la brevedad y te ayudamos a hacer los cambios necesarios.</p>
+            </div>
+            <div class="cont-faq-item">
+                <h4>¿Cuánto demora la respuesta al formulario?</h4>
+                <p>Respondemos dentro de 24 horas hábiles. Si tu consulta es urgente, llámanos directamente.</p>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        document.getElementById("cfSubmit").addEventListener("click", () => {
+            const nombre  = document.getElementById("cf-nombre").value.trim();
+            const email   = document.getElementById("cf-email").value.trim();
+            const asunto  = document.getElementById("cf-asunto").value;
+            const mensaje = document.getElementById("cf-mensaje").value.trim();
+
+            if (!nombre || !email || !asunto || !mensaje) {
+                alert("Por favor completa los campos obligatorios: nombre, correo, asunto y mensaje.");
+                return;
+            }
+
+            // Simulación de envío
+            document.getElementById("cfToast").classList.add("show");
+            document.getElementById("cfSubmit").disabled = true;
+            document.getElementById("cfSubmit").textContent = "Enviado ✓";
+
+            setTimeout(() => {
+                document.getElementById("cf-nombre").value    = "";
+                document.getElementById("cf-apellido").value  = "";
+                document.getElementById("cf-email").value     = "";
+                document.getElementById("cf-tel").value       = "";
+                document.getElementById("cf-asunto").value    = "";
+                document.getElementById("cf-mensaje").value   = "";
+                document.getElementById("cfSubmit").disabled  = false;
+                document.getElementById("cfSubmit").textContent = "Enviar mensaje";
+                document.getElementById("cfToast").classList.remove("show");
+            }, 4000);
+        });
+    </script>
+
+</body>
+</html>
