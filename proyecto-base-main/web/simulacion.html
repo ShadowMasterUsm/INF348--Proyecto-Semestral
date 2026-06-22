@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClaroFin - Simulador de Crédito</title>
+    <link rel="stylesheet" href="css/simulacion.css">
+    <script defer src="js/navbar.js"></script>
+    <script defer src="js/simulacion.js"></script>
+</head>
+
+<body>
+    <header class="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="brand">
+                <img src="assets/logo.png" alt="Logo ClaroFin" class="logo">
+            </a>
+
+            <nav class="nav-links" id="navLinks" data-open="false">
+                <a href="infoseguros.html">SEGUROS</a>
+                <a href="infocreditos.html">CRÉDITOS</a>
+                <a href="infocontacto.html">CONTACTO</a>
+            </nav>
+
+            <button class="burger" aria-label="Abrir menú" aria-expanded="false">☰</button>
+
+            <a href="acceso.html" class="acceso" id="accesoBtn">ACCESO</a>
+
+            <div class="profile" id="profileMenu" style="display:none;">
+                <img src="assets/profile.jpg" alt="Perfil" id="profileBtn" class="profile-icon">
+                <div class="dropdown" id="dropdownMenu">
+                    <button id="logoutBtn">Cerrar sesión</button>
+                    <button id="estUSU">Estados de solicitud</button>
+                    <button id="pagosbtn">Pagos cuotas</button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <section class="hero">
+            <h1>Simulación de Crédito</h1>
+        </section>
+
+        <h2 class="main-title">Simula tu Crédito paso a paso</h2>
+
+        <!-- Paso 1: Ingresos -->
+        <section id="paso1" class="paso activo" data-step="1">
+            <h3>Tus Ingresos</h3>
+            <p>Cuéntanos cuánto ganas al mes para ajustar la simulación a tu realidad.</p>
+            <label for="renta">Renta mensual</label>
+            <select name="renta" id="renta">
+                <option value="" selected disabled hidden>Selecciona...</option>
+                <option value="A">Menos de $500.000</option>
+                <option value="B">Desde $500.001 a $1.000.000</option>
+                <option value="C">Desde $1.000.001 a $2.000.000</option>
+                <option value="D">Desde $2.000.001 a $3.500.000</option>
+                <option value="E">Más de $3.500.000</option>
+            </select>
+            <div class="botones">
+                <button class="btn continuar" id="btn-continuar-1">CONTINUAR</button>
+            </div>
+        </section>
+
+        <!-- Paso 2: Monto y Cuotas -->
+        <section id="paso2" class="paso inactivo" data-step="2">
+            <h3>Monto y Cuotas</h3>
+            <p>Indica el monto que necesitas y en cuántas cuotas quieres pagarlo.</p>
+
+            <div class="form-grid">
+                <div class="campo">
+                    <label for="monto">Monto a solicitar</label>
+                    <input id="monto" type="text" placeholder="$">
+                </div>
+                <div class="campo">
+                    <label for="cuotas">Número de cuotas</label>
+                    <input id="cuotas" type="number" min="1" max="60" placeholder="1 – 60">
+                </div>
+            </div>
+
+            <div class="botones">
+                <button class="btn volver" id="btn-volver-2">VOLVER</button>
+                <button class="btn continuar" id="btn-continuar-2">CONTINUAR</button>
+            </div>
+        </section>
+
+        <!-- Paso 3: Seguros -->
+        <section id="paso3" class="paso inactivo" data-step="3">
+            <h3>Seguros Opcionales</h3>
+            <p>¿Quieres mayor tranquilidad? Agrega seguros opcionales para protegerte a ti y a quienes más quieres.</p>
+
+            <label class="switch-container">
+                <div class="switch-wrapper">
+                    <input type="checkbox" id="seguroCesantia" class="switch-input">
+                    <span class="switch-slider"></span>
+                </div>
+                <div class="switch-text">
+                    <span class="switch-title">Seguro de Cesantía</span>
+                    <span class="switch-desc">Cubre tus cuotas si pierdes tu empleo.</span>
+                </div>
+            </label>
+
+            <label class="switch-container">
+                <div class="switch-wrapper">
+                    <input type="checkbox" id="seguroDesgravamen" class="switch-input">
+                    <span class="switch-slider"></span>
+                </div>
+                <div class="switch-text">
+                    <span class="switch-title">Seguro de Desgravamen</span>
+                    <span class="switch-desc">Cubre el saldo del crédito en caso de fallecimiento.</span>
+                </div>
+            </label>
+
+            <div class="botones">
+                <button class="btn volver" id="btn-volver-3">VOLVER</button>
+                <button class="btn continuar" id="btn-ver-simulacion">VER SIMULACIÓN</button>
+            </div>
+        </section>
+
+        <!-- Paso 4: Resultado de simulación -->
+        <section id="paso4" class="paso inactivo" data-step="4">
+            <h3>Resultado de tu Simulación</h3>
+            <div id="resumen-simulacion" class="resumen-card">
+                <!-- Se rellena dinámicamente por JS -->
+            </div>
+            <div class="botones" style="margin-top:20px;">
+                <button class="btn volver" id="btn-volver-4">VOLVER</button>
+                <button class="btn continuar" id="btn-solicitar-credito">SOLICITAR CRÉDITO</button>
+            </div>
+        </section>
+    </main>
+</body>
+</html>
