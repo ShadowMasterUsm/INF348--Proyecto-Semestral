@@ -119,11 +119,65 @@ CREATE TABLE IF NOT EXISTS simulacion (
     monto_total DECIMAL(15,2),
     monto_cuota DECIMAL(15,2),
     fecha_primer_pago DATE,
+    probabilidad_aprobacion DECIMAL(5,2),
+    tipo_simulacion VARCHAR(50),
     fecha DATETIME DEFAULT NOW(),
     FOREIGN KEY (id_tipo_credito) REFERENCES tipo_credito(id_tipo_credito)
 );
 
--- FIX: tabla pago_cuota faltaba completamente en este archivo
+CREATE TABLE IF NOT EXISTS antecedentes_financieros (
+    id_antecedente INT AUTO_INCREMENT PRIMARY KEY,
+    id_cliente INT NOT NULL,
+    ingresos DECIMAL(15,2),
+    deudas DECIMAL(15,2),
+    antiguedad_laboral INT COMMENT 'En meses',
+    fecha_actualizacion DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_cliente) REFERENCES cliente(id_cliente) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS evaluation_riesgo (
+    id_evaluacion INT AUTO_INCREMENT PRIMARY KEY,
+    id_credito INT NOT NULL,
+    id_analista INT,
+    puntaje INT CHECK(puntaje BETWEEN 0 AND 100),
+    estado ENUM('PENDIENTE', 'EVALUANDO', 'APROBADO', 'RECHAZADO', 'ERROR_EVALUACION') DEFAULT 'PENDIENTE',
+    observaciones TEXT,
+    fecha_evaluacion DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_credito) REFERENCES credito(id_credito) ON DELETE CASCADE,
+    FOREIGN KEY (id_analista) REFERENCES analista(id_analista) ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS prestamo (
+    id_prestamo INT AUTO_INCREMENT PRIMARY KEY,
+    id_credito INT NOT NULL UNIQUE,
+    estado ENUM('ACTIVADO', 'PAGANDOSE', 'FINALIZADO') DEFAULT 'ACTIVADO',
+    fecha_primer_pago DATE,
+    fecha_activacion DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_credito) REFERENCES credito(id_credito) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS cuota (
+    id_cuota INT AUTO_INCREMENT PRIMARY KEY,
+    id_prestamo INT NOT NULL,
+    numero_cuota INT NOT NULL,
+    monto DECIMAL(15,2) NOT NULL,
+    fecha_vencimiento DATE NOT NULL,
+    estado ENUM('PENDIENTE', 'PAGADA', 'VENCIDA', 'PARCIAL') DEFAULT 'PENDIENTE',
+    fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_cuota (id_prestamo, numero_cuota),
+    FOREIGN KEY (id_prestamo) REFERENCES prestamo(id_prestamo) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS pago (
+    id_pago INT AUTO_INCREMENT PRIMARY KEY,
+    id_cuota INT NOT NULL,
+    monto DECIMAL(15,2) NOT NULL,
+    fecha_pago DATETIME DEFAULT CURRENT_TIMESTAMP,
+    comprobante VARCHAR(255),
+    FOREIGN KEY (id_cuota) REFERENCES cuota(id_cuota) ON DELETE CASCADE
+);
+
+-- FIX: tabla pago_cuota mantiene compatibilidad con versión anterior
 CREATE TABLE IF NOT EXISTS pago_cuota (
     id_pago        INT AUTO_INCREMENT PRIMARY KEY,
     id_credito     INT NOT NULL,
@@ -229,3 +283,89 @@ VALUES
 ('Chile', 'Santiago', 'America del sur'),
 ('Noruega', 'Oslo', 'Europa'),
 ('Mexico', 'Ciudad de Mexico', 'America del norte');
+
+-- ========================================
+-- DATOS DE PRUEBA PARA BD06_TRAMITACION
+-- ========================================
+
+USE BD06_TRAMITACION;
+
+-- Regiones (si no existen)
+INSERT IGNORE INTO region (id_region, nombre) VALUES 
+(1, 'Región de Arica y Parinacota'),
+(2, 'Región de Tarapacá'),
+(3, 'Región de Antofagasta'),
+(4, 'Región de Atacama'),
+(5, 'Región de Coquimbo'),
+(6, 'Región de Valparaíso'),
+(7, 'Región del Libertador General Bernardo O\'Higgins'),
+(8, 'Región del Maule'),
+(9, 'Región de Ñuble'),
+(10, 'Región de La Araucanía'),
+(11, 'Región de Los Ríos'),
+(12, 'Región de Los Lagos'),
+(13, 'Región de Aysén del General Carlos Ibáñez del Campo'),
+(14, 'Región de Magallanes y de la Antártica Chilena'),
+(15, 'Región Metropolitana de Santiago');
+
+-- Comunas de ejemplo (Región Metropolitana)
+INSERT IGNORE INTO comuna (id_region, nombre) VALUES 
+(15, 'Santiago'),
+(15, 'La Florida'),
+(15, 'Puente Alto'),
+(15, 'San Bernardo'),
+(15, 'La Pintana'),
+(15, 'Peñalolén'),
+(15, 'Quilicura'),
+(15, 'Maipú');
+
+-- Tipos de crédito
+INSERT IGNORE INTO tipo_credito (nombre, descripcion) VALUES 
+('Crédito de Consumo', 'Crédito destinado a la compra de bienes o servicios de consumo'),
+('Crédito Automotriz', 'Crédito especializado para la compra de vehículos'),
+('Crédito Vivienda', 'Crédito para la adquisición o construcción de vivienda'),
+('Crédito Educación', 'Crédito para financiar gastos de educación');
+
+-- Seguros
+INSERT IGNORE INTO seguro (nombre, cobertura, tasa, monto_max_cobertura) VALUES 
+('Seguro Desgravamen', 'Cubre el saldo del crédito en caso de fallecimiento', 0.5, 60000000),
+('Seguro Cesantía', 'Cubre el pago de cuotas en caso de desempleo', 0.3, 60000000),
+('Seguro Protección Compra', 'Protege la compra con cobertura adicional', 0.2, 30000000);
+
+-- Analistas de ejemplo
+INSERT IGNORE INTO analista (rut, nombre, apellido, correo) VALUES 
+('12.345.678-9', 'Juan', 'García', 'juan.garcia@banco.cl'),
+('15.678.901-2', 'María', 'López', 'maria.lopez@banco.cl'),
+('19.876.543-1', 'Carlos', 'Rodríguez', 'carlos.rodriguez@banco.cl');
+
+-- Cliente de ejemplo para testing
+INSERT IGNORE INTO cliente (id_region, id_comuna, rut, nombre, apellido, telefono, correo, password) VALUES 
+(15, 1, '18.765.432-0', 'Pedro', 'Pérez', '+56912345678', 'pedro.perez@example.com', 'hashed_password_123');
+
+-- ========================================
+-- COMENTARIO SOBRE ESTRUCTURA
+-- ========================================
+-- 
+-- El modelo de dominio incluye las siguientes entidades:
+-- - cliente: Usuario que solicita créditos
+-- - tipo_credito: Clasificación de créditos
+-- - credito: Solicitud principal de crédito
+-- - simulacion: Simulaciones de crédito sin crear solicitud
+-- - prestamo: Préstamo activado tras firma digital
+-- - cuota: Cuotas mensuales del préstamo
+-- - pago: Registro de pagos realizados
+-- - evaluation_riesgo: Evaluación automatizada del riesgo
+-- - analista: Personal de análisis
+-- - antecedentes_financieros: Historial financiero del cliente
+-- - tramite: Seguimiento del proceso administrativo
+-- - documento: Documentos adjuntos
+-- - seguro & credito_seguro: Seguros adicionales
+--
+-- El flujo típico es:
+-- 1. Cliente simula un crédito (simulacion)
+-- 2. Cliente envía solicitud formal (credito)
+-- 3. Sistema ejecuta evaluation_riesgo
+-- 4. Si aprobado, cliente realiza firma digital
+-- 5. Se crea prestamo con cuotas
+-- 6. Cliente realiza pagos (pago)
+-- ========================================

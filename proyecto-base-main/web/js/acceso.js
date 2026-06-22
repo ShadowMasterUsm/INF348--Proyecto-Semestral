@@ -7,8 +7,8 @@
  *   #panelRegistro  → registro de nuevo cliente
  *
  * API:
- *   GET  /cliente/validar?rut=&password=  → valida credenciales
- *   POST /cliente/registrar               → crea nueva cuenta
+ *   POST /api/solicitudes              → crea nueva cuenta cliente
+ *   GET  /api/solicitudes/cliente/:rut → valida credenciales
  */
 
 const API_BASE = 'http://localhost:8080';
