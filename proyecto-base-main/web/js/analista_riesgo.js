@@ -77,7 +77,7 @@ document.addEventListener('DOMContentLoaded', () => {
           const tasaInteres = Number(item.tasa_interes_anual) || 12.5;
           const cuotaCalculada = calcularCuotaMensualEstimada(monto, plazo, tasaInteres);
           return {
-            id: item.id || item.id_simulacion, cliente: item.rut, monto, plazo, tasaInteres,
+            id: item.id || item.id_simulacion, cliente: item.rut, rutSesion: item.rut_sesion, monto, plazo, tasaInteres,
             cuotaMensual: Number(item.monto_cuota) || cuotaCalculada,
             totalPagar: Number(item.monto_total) || cuotaCalculada * plazo,
             incluye_seguro_desgravamen: Boolean(item.seguroDesgravamen || item.incluye_seguro_desgravamen),
@@ -108,7 +108,7 @@ document.addEventListener('DOMContentLoaded', () => {
           const tasaInteres = Number(item.tasa_interes_anual) || 12.5;
           const cuotaCalculada = calcularCuotaMensualEstimada(monto, plazo, tasaInteres);
           return {
-            id: idUnico, cliente: item.rut, monto, plazo, tasaInteres,
+            id: idUnico, cliente: item.rut, rutSesion: item.rut_sesion, monto, plazo, tasaInteres,
             cuotaMensual: Number(item.monto_cuota) || cuotaCalculada,
             totalPagar: Number(item.monto_total) || cuotaCalculada * plazo,
             incluye_seguro_desgravamen: Boolean(item.incluye_seguro_desgravamen),
@@ -148,8 +148,21 @@ document.addEventListener('DOMContentLoaded', () => {
       const cuotaMensual = Number(solicitud.cuotaMensual) || calcularCuotaMensualEstimada(solicitud.monto, solicitud.plazo, solicitud.tasaInteres);
       const totalPagar = Number(solicitud.totalPagar) || (cuotaMensual * (Number(solicitud.plazo) || 0));
       const tasaMensual = (Number(solicitud.tasaInteres) || 0) / 12;
+
+      // Detect mismatch between session RUT and requested RUT
+      const cleanSessionRut = (solicitud.rutSesion || '').replace(/[^0-9kK]/ig, '').toUpperCase();
+      const cleanClientRut = (solicitud.cliente || '').replace(/[^0-9kK]/ig, '').toUpperCase();
+      const isMismatch = cleanSessionRut && cleanClientRut && cleanSessionRut !== cleanClientRut;
+      const alertaHtml = isMismatch
+        ? `<br><span class="badge-fraude" style="background-color: #ffebeb; color: #d9534f; border: 1px solid #d9534f; border-radius: 4px; padding: 2px 6px; font-size: 11px; font-weight: bold; display: inline-block; margin-top: 5px;">⚠️ Posible Fraude</span>`
+        : '';
+
       fila.innerHTML = `
-        <td data-label="Cliente">${solicitud.cliente}</td>
+        <td data-label="Cliente">
+          <strong>Solicitado:</strong> ${solicitud.cliente}<br>
+          <strong>Sesión:</strong> ${solicitud.rutSesion || '—'}
+          ${alertaHtml}
+        </td>
         <td data-label="Monto">${formatearMoneda(solicitud.monto)}</td>
         <td data-label="Plazo">${Number(solicitud.plazo) || 0} meses</td>
         <td data-label="Tasa anual">${formatearTasa(solicitud.tasaInteres)} <span class="table-muted">(${formatearTasa(tasaMensual)} mensual aprox.)</span></td>

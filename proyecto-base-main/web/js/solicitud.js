@@ -389,11 +389,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const montoIngresado  = parseInt(document.getElementById("monto").value.replace(/\D/g, ""));
             const cuotasIngresadas = parseInt(document.getElementById("cuotas").value);
+            const sessionRut = localStorage.getItem("clienteRut") || "";
 
             const data = {
                 tipoCredito: document.getElementById("tipo-credito").value,
                 rut: rutValue,
                 num_documento: numDocValue,
+                rut_sesion: sessionRut,
                 renta: document.getElementById("renta").value || "C",
                 monto: montoIngresado,
                 cuotas: cuotasIngresadas,

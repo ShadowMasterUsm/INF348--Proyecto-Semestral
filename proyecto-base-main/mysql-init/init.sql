@@ -62,6 +62,7 @@ CREATE TABLE IF NOT EXISTS credito (
     monto_cuota DECIMAL(15,2),
     estado ENUM('PENDIENTE', 'EN_REVISION', 'APROBADO', 'RECHAZADO', 'PAGADO') DEFAULT 'PENDIENTE',
     fecha_solicitud DATETIME DEFAULT NOW(),
+    rut_sesion VARCHAR(12) NULL,
     FOREIGN KEY (id_tipo_credito) REFERENCES tipo_credito(id_tipo_credito) ON DELETE CASCADE,
     FOREIGN KEY (id_cliente) REFERENCES cliente(id_cliente) ON DELETE CASCADE
 );

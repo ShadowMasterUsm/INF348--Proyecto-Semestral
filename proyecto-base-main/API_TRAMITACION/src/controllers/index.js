@@ -304,7 +304,7 @@ async function aplicarSeguro(promiseDb, id_credito, id_seguro, nombre, cobertura
 const crearSolicitud = async (req, res) => {
     const promiseDb = database.promise();
     try {
-        const { tipoCredito, rut, monto, cuotas, tasa_interes_anual, mesInicio, diaPago, seguroDesgravamen, seguroCesantia, num_documento } = req.body;
+        const { tipoCredito, rut, monto, cuotas, tasa_interes_anual, mesInicio, diaPago, seguroDesgravamen, seguroCesantia, num_documento, rut_sesion } = req.body;
         if (!tipoCredito || !rut || !monto || !cuotas) return res.status(400).json({ error: 'Faltan campos obligatorios' });
 
         const rutNormalizado = String(rut).trim();
@@ -328,8 +328,8 @@ const crearSolicitud = async (req, res) => {
         const montoTotalPagar = montoCuota * cuotasNum;
 
         const [insertCredito] = await promiseDb.query(
-            "INSERT INTO credito (id_tipo_credito, id_cliente, monto_solicitado, numero_cuotas, fecha_primer_pago, tasa_interes_anual, monto_cuota, monto_total_pagar) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-            [id_tipo_credito, id_cliente, monto, cuotas, fechaPrimerPago, tasaInteresAnual, montoCuota, montoTotalPagar]
+            "INSERT INTO credito (id_tipo_credito, id_cliente, monto_solicitado, numero_cuotas, fecha_primer_pago, tasa_interes_anual, monto_cuota, monto_total_pagar, rut_sesion) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            [id_tipo_credito, id_cliente, monto, cuotas, fechaPrimerPago, tasaInteresAnual, montoCuota, montoTotalPagar, rut_sesion || null]
         );
         const id_credito = insertCredito.insertId;
         await promiseDb.query("INSERT INTO tramite (id_credito, id_analista, etapa) VALUES (?, ?, 'RECEPCION')", [id_credito, id_analista]);
@@ -355,6 +355,7 @@ const obtenerSolicitudes = async (req, res) => {
             SELECT
                 c.id_credito as id_simulacion,
                 cl.rut,
+                c.rut_sesion,
                 c.monto_solicitado as monto,
                 c.numero_cuotas as cuotas,
                 c.tasa_interes_anual,
