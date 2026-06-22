@@ -136,11 +136,11 @@ async function renderTodo() {
   const firmadas = leerFirmadas();
 
   // Intentar cargar desde la API
-  const ruts = obtenerRutsDesdeLocalStorage();
+  const rutSesion = localStorage.getItem("clienteRut") || "";
   creditosAPI = [];
 
-  if (ruts.length > 0) {
-    creditosAPI = await cargarCreditosDesdeAPI(ruts);
+  if (rutSesion) {
+    creditosAPI = await cargarCreditosDesdeAPI([rutSesion]);
   }
 
   if (creditosAPI.length > 0) {
@@ -156,17 +156,32 @@ async function renderTodo() {
 
   } else {
     // ── Fallback: localStorage (sin conexión al backend) ─────────────────
-    console.warn('API no disponible o sin RUTs, usando localStorage como fallback.');
+    console.warn('API no disponible o sin RUT, usando localStorage como fallback.');
+    const activeRutClean = rutSesion.replace(/[^0-9kK]/ig, '').toUpperCase();
+
     const analista = leerAnalista();
     const enviadas  = leerEnviadas();
 
-    const sinFirmarAnalista = analista?.['sin-firmar'] ?? [];
-    const aprobadasAnalista = analista?.aprobadas ?? [];
+    // Filtrar solicitudes enviadas locales por la sesión activa
+    const enviadasFiltradas = enviadas.filter(s => {
+      const rutS = (s.rut_sesion || s.rut || '').replace(/[^0-9kK]/ig, '').toUpperCase();
+      return rutS === activeRutClean;
+    });
+
+    const sinFirmarAnalista = (analista?.['sin-firmar'] ?? []).filter(s => {
+      const rutS = (s.rut_sesion || s.cliente || '').replace(/[^0-9kK]/ig, '').toUpperCase();
+      return rutS === activeRutClean;
+    });
+    const aprobadasAnalista = (analista?.aprobadas ?? []).filter(s => {
+      const rutS = (s.rut_sesion || s.cliente || '').replace(/[^0-9kK]/ig, '').toUpperCase();
+      return rutS === activeRutClean;
+    });
+
     const idsProcesados = new Set((analista?.procesados ?? []).map(String));
     const idsSinFirmar  = new Set(sinFirmarAnalista.map(s => String(normId(s))));
     const idsFirmados   = new Set([...firmadas].map(String));
 
-    const pendientes = enviadas.filter(s => {
+    const pendientes = enviadasFiltradas.filter(s => {
       const id = normId(s);
       if (id === '') return true;
       return !idsProcesados.has(id) && !idsSinFirmar.has(id) && !idsFirmados.has(id);

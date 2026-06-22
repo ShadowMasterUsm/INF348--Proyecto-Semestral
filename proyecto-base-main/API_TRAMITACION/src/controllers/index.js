@@ -443,7 +443,7 @@ const obtenerCreditosPorRut = async (req, res) => {
                 (SELECT COUNT(*) FROM credito_seguro cs JOIN seguro s ON cs.id_seguro = s.id_seguro WHERE cs.id_credito = c.id_credito AND s.nombre LIKE '%Cesantía%') > 0 as incluye_seguro_cesantia
             FROM credito c
             JOIN cliente cl ON c.id_cliente = cl.id_cliente
-            WHERE REPLACE(cl.rut, '.', '') = ?
+            WHERE REPLACE(c.rut_sesion, '.', '') = ?
             ORDER BY c.id_credito DESC
         `, [rut.replace(/\./g, '').trim()]);
 
