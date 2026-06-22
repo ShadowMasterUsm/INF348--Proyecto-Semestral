@@ -8,6 +8,6 @@ sonarcloud-check:
       -Dsonar.projectKey=grupo09_grupo09-sistema-de-tramitacion
       -Dsonar.organization=grupo09
       -Dsonar.sources=./proyecto-base-main/API_TRAMITACION/src
-      -Dsonar.branch.name=main
+      -Dsonar.branch.name=master
   only:
     - main
