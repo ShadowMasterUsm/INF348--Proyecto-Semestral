@@ -188,6 +188,56 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // ═══════════════════════════════════════════════════════════
+    // ═══════════════════════════════════════════════════════════
+    // PRECARGA DESDE RECOMENDACIONES (querystring + localStorage)
+    // ─ ?renta=   → mapea pesos a banda y selecciona en el select
+    // ─ ?monto=   → rellena el campo monto (paso 3)
+    // ─ ?cuotas=  → rellena el campo cuotas (paso 4)
+    // ─ RUT       → viene de localStorage.clienteRut (sesión activa)
+    // ═══════════════════════════════════════════════════════════
+    (function precargarDesdeRecomendacion() {
+        const qp = new URLSearchParams(window.location.search);
+
+        // RUT — solo desde localStorage; no lo exponemos en la URL
+        if (inputRut && clienteRut && !inputRut.value.trim()) {
+            inputRut.value = clienteRut;
+        }
+
+        // Renta — convierte el valor numérico en pesos a la banda del select
+        const rentaParam = qp.get("renta");
+        const selectRenta = document.getElementById("renta");
+        if (selectRenta && rentaParam) {
+            const pesos = parseInt(rentaParam, 10);
+            let banda = "";
+            if      (pesos <= 500_000)   banda = "A";
+            else if (pesos <= 1_000_000) banda = "B";
+            else if (pesos <= 2_000_000) banda = "C";
+            else if (pesos <= 3_500_000) banda = "D";
+            else                         banda = "E";
+            selectRenta.value = banda;
+        }
+
+        // Monto — formateamos igual que el listener de input
+        const montoParam = qp.get("monto");
+        if (inputMonto && montoParam) {
+            const num = parseInt(montoParam.replace(/[^\d]/g, ""), 10);
+            if (!isNaN(num)) {
+                inputMonto.value = "$" + num.toLocaleString("es-CL");
+            }
+        }
+
+        // Cuotas
+        const cuotasParam = qp.get("cuotas");
+        const inputCuotas = document.getElementById("cuotas");
+        if (inputCuotas && cuotasParam) {
+            const num = parseInt(cuotasParam, 10);
+            if (!isNaN(num) && num >= 1 && num <= 60) {
+                inputCuotas.value = num;
+            }
+        }
+    })();
+
+    // ═══════════════════════════════════════════════════════════
     // SELECTORES DE MES Y DÍA DE PAGO
     // ═══════════════════════════════════════════════════════════
     const selectMesPago = document.getElementById("mes-pago");
