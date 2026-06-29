@@ -80,11 +80,164 @@ document.addEventListener("DOMContentLoaded", () => {
     // ═══════════════════════════════════════════════════════════
     // OCR — Subida de documento para detectar RUT y Número de Documento
     // ═══════════════════════════════════════════════════════════
-    const inputDocumento = document.getElementById("documento");
-    if (inputDocumento) {
-        inputDocumento.addEventListener("change", (event) => {
+    if (typeof pdfjsLib !== 'undefined') {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+    }
+
+    function validarRutChile(rutCompleto) {
+        if (!rutCompleto) return false;
+        const clean = rutCompleto.replace(/[^0-9kK]/g, "").toUpperCase();
+        if (clean.length < 8 || clean.length > 9) return false;
+        
+        const cuerpo = clean.slice(0, -1);
+        const dv = clean.slice(-1);
+        
+        let suma = 0;
+        let multiplo = 2;
+        for (let i = cuerpo.length - 1; i >= 0; i--) {
+            suma += multiplo * parseInt(cuerpo.charAt(i), 10);
+            multiplo = multiplo < 7 ? multiplo + 1 : 2;
+        }
+        
+        const dvEsperado = 11 - (suma % 11);
+        let dvEsperadoChar = "";
+        if (dvEsperado === 11) dvEsperadoChar = "0";
+        else if (dvEsperado === 10) dvEsperadoChar = "K";
+        else dvEsperadoChar = String(dvEsperado);
+        
+        return dv === dvEsperadoChar;
+    }
+
+    function extraerRutValido(text, docMatchCleaned) {
+        const regex = /\b\d{1,2}\.?\d{3}\.?\d{3}-?[0-9kK]\b/g;
+        const matches = text.match(regex) || [];
+        
+        // 1. Filtrar coincidencias que pasen validación de Modulo 11
+        for (const match of matches) {
+            const cleanedMatch = match.replace(/[^0-9kK]/g, "").toUpperCase();
+            if (cleanedMatch !== docMatchCleaned && validarRutChile(match)) {
+                return match;
+            }
+        }
+        
+        // 2. Fallback: buscar la primera coincidencia que contenga un guion "-" (típico de RUT en carnet)
+        for (const match of matches) {
+            const cleanedMatch = match.replace(/[^0-9kK]/g, "").toUpperCase();
+            if (cleanedMatch !== docMatchCleaned && match.includes("-")) {
+                return match;
+            }
+        }
+        
+        // 3. Fallback final: cualquier coincidencia que no sea igual al número de documento
+        for (const match of matches) {
+            const cleanedMatch = match.replace(/[^0-9kK]/g, "").toUpperCase();
+            if (cleanedMatch !== docMatchCleaned) {
+                return match;
+            }
+        }
+        
+        // Si no hay nada filtrado, tomar el primer match crudo
+        const rawRegex = /\d{1,2}\.?\d{3}\.?\d{3}-?[0-9kK]/;
+        const rawMatch = text.match(rawRegex);
+        return rawMatch ? rawMatch[0] : null;
+    }
+
+    function procesarTextoDocumento(text, p, tipoDoc) {
+        // Normalizar texto: eliminar acentos/diacríticos para soportar variantes como NÚMERO vs NUMERO, CÉDULA vs CEDULA, etc.
+        const normalizedText = (text || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+        if (tipoDoc === "cedula") {
+            // Find all 9-character alphanumeric blocks and filter out common words to extract document number
+            const matches = normalizedText.match(/\b[A-Z0-9]{3}[.-]?[A-Z0-9]{3}[.-]?[A-Z0-9]{3}\b/gi) || [];
+            const blacklist = ["IDENTIDAD", "DOCUMENTO", "NUMERO", "REPUBLICA", "APELLIDOS", "PROFESION", "CATEGORIA", "SIGNATURE"];
+            const docMatch = matches.find(m => {
+                const cleaned = m.replace(/[^A-Z0-9]/ig, "").toUpperCase();
+                const esPalabraComun = /^[A-Z]+$/.test(cleaned) && blacklist.includes(cleaned);
+                const tieneNumeros = /\d/.test(cleaned);
+                const tieneSeparadores = /[.-]/.test(m);
+                return !esPalabraComun && (tieneNumeros || tieneSeparadores);
+            });
+
+            const docMatchCleaned = docMatch ? docMatch.replace(/[^A-Z0-9]/ig, "").toUpperCase() : "";
+
+            // Extraer RUT válido descartando el número de documento
+            const rutMatch = extraerRutValido(normalizedText, docMatchCleaned);
+
+            let detectadoRut = false;
+            let detectadoDoc = false;
+
+            if (rutMatch) {
+                const inputRut = document.getElementById("rut");
+                inputRut.value = rutMatch;
+                inputRut.dispatchEvent(new Event("input"));
+                detectadoRut = true;
+            }
+
+            if (docMatch) {
+                const inputDoc = document.getElementById("num_documento");
+                if (inputDoc) {
+                    inputDoc.value = docMatchCleaned;
+                    inputDoc.dispatchEvent(new Event("input"));
+                    detectadoDoc = true;
+                }
+            }
+
+            const hallados = [];
+            if (detectadoRut) hallados.push("RUT");
+            if (detectadoDoc) hallados.push("Número de Serie");
+
+            if (hallados.length > 0) {
+                p.textContent = `${hallados.join(" y ")} detectado(s) desde la cédula.`;
+                p.style.color = "#007bff";
+            } else {
+                p.textContent = "No se pudo detectar el RUT ni Número de Serie en la cédula. Intenta completando manualmente.";
+                p.style.color = "orange";
+            }
+
+        } else if (tipoDoc === "cotizaciones") {
+            // Renta mensual promedio: e.g. Renta mensual promedio: $1.507.500
+            const rentaRegex = /renta\s+mensual\s+promedio:?\s*\$?\s*([0-9.]+)/i;
+            const rentaMatch = normalizedText.match(rentaRegex);
+
+            let detectadoRenta = false;
+
+            if (rentaMatch && rentaMatch[1]) {
+                const cleanedRenta = rentaMatch[1].replace(/[^\d]/g, "");
+                const pesos = parseInt(cleanedRenta, 10);
+                if (!isNaN(pesos)) {
+                    let banda = "";
+                    if (pesos <= 500000) banda = "A";
+                    else if (pesos <= 1000000) banda = "B";
+                    else if (pesos <= 2000000) banda = "C";
+                    else if (pesos <= 3500000) banda = "D";
+                    else banda = "E";
+
+                    const selectRenta = document.getElementById("renta");
+                    if (selectRenta) {
+                        selectRenta.value = banda;
+                        selectRenta.dispatchEvent(new Event("change"));
+                        detectadoRenta = true;
+                    }
+                }
+            }
+
+            if (detectadoRenta) {
+                p.textContent = "Renta mensual detectada y seleccionada correctamente.";
+                p.style.color = "#007bff";
+            } else {
+                p.textContent = "No se detectó la renta en el certificado. Asegúrate de que contenga el texto 'Renta mensual promedio: $...'";
+                p.style.color = "orange";
+            }
+        }
+    }
+
+    function configurarProcesamientoArchivo(elementId, tipoDoc) {
+        const inputEl = document.getElementById(elementId);
+        if (!inputEl) return;
+
+        inputEl.addEventListener("change", (event) => {
             const file = event.target.files[0];
-            inputDocumento.parentElement.querySelectorAll(".doc-msg").forEach(e => e.remove());
+            inputEl.parentElement.querySelectorAll(".doc-msg").forEach(e => e.remove());
 
             if (!file) return;
 
@@ -92,64 +245,53 @@ document.addEventListener("DOMContentLoaded", () => {
             p.className = "doc-msg";
             p.style.cssText = "color:#28a745;font-size:0.9em;margin-top:5px;";
             p.textContent = `Procesando '${file.name}'...`;
-            inputDocumento.insertAdjacentElement("afterend", p);
+            inputEl.insertAdjacentElement("afterend", p);
 
-            Tesseract.recognize(file, "spa", { logger: m => console.log(m) })
-                .then(({ data: { text } }) => {
-                    const rutRegex = /\d{1,2}\.?\d{3}\.?\d{3}-?[0-9kK]/;
-                    const rutMatch = text.match(rutRegex);
-
-                    // Find all 9-character alphanumeric blocks and filter out common words
-                    const matches = text.match(/\b[A-Z0-9]{3}[.-]?[A-Z0-9]{3}[.-]?[A-Z0-9]{3}\b/gi) || [];
-                    const blacklist = ["IDENTIDAD", "DOCUMENTO", "REPUBLICA", "APELLIDOS", "PROFESION", "CATEGORIA", "SIGNATURE"];
-                    const docMatch = matches.find(m => {
-                        const cleaned = m.replace(/[^A-Z0-9]/ig, "").toUpperCase();
-                        const esPalabraComun = /^[A-Z]+$/.test(cleaned) && blacklist.includes(cleaned);
-                        const tieneNumeros = /\d/.test(cleaned);
-                        const tieneSeparadores = /[.-]/.test(m);
-                        return !esPalabraComun && (tieneNumeros || tieneSeparadores);
-                    });
-
-                    let detectadoRut = false;
-                    let detectadoDoc = false;
-
-                    if (rutMatch) {
-                        const inputRut = document.getElementById("rut");
-                        inputRut.value = rutMatch[0];
-                        inputRut.dispatchEvent(new Event("input"));
-                        detectadoRut = true;
-                    }
-
-                    if (docMatch) {
-                        const inputDoc = document.getElementById("num_documento");
-                        if (inputDoc) {
-                            inputDoc.value = docMatch.replace(/[^A-Z0-9]/ig, "").toUpperCase();
-                            inputDoc.dispatchEvent(new Event("input"));
-                            detectadoDoc = true;
-                        }
-                    }
-
-                    if (detectadoRut && detectadoDoc) {
-                        p.textContent = "RUT y Número de Documento detectados desde la imagen.";
-                        p.style.color = "#007bff";
-                    } else if (detectadoRut) {
-                        p.textContent = "RUT detectado desde la imagen. Número de serie no detectado.";
-                        p.style.color = "orange";
-                    } else if (detectadoDoc) {
-                        p.textContent = "Número de serie detectado. RUT no detectado.";
-                        p.style.color = "orange";
-                    } else {
-                        p.textContent = "No se pudo detectar el RUT ni el Número de Documento. Intenta con otra imagen.";
-                        p.style.color = "orange";
-                    }
-                })
-                .catch(err => {
-                    console.error(err);
-                    p.textContent = "Error al procesar la imagen.";
+            // Validar si es archivo PDF
+            if (file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")) {
+                if (typeof pdfjsLib === 'undefined') {
+                    p.textContent = "Error: El motor de PDF (pdf.js) no se ha cargado.";
                     p.style.color = "red";
-                });
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = async function() {
+                    const typedarray = new Uint8Array(this.result);
+                    try {
+                        const pdf = await pdfjsLib.getDocument(typedarray).promise;
+                        let fullText = "";
+                        for (let i = 1; i <= pdf.numPages; i++) {
+                            const page = await pdf.getPage(i);
+                            const textContent = await page.getTextContent();
+                            const pageText = textContent.items.map(item => item.str).join(" ");
+                            fullText += pageText + "\n";
+                        }
+                        procesarTextoDocumento(fullText, p, tipoDoc);
+                    } catch (err) {
+                        console.error("Error al leer PDF:", err);
+                        p.textContent = "Error al extraer texto del PDF. Intenta completando manualmente.";
+                        p.style.color = "red";
+                    }
+                };
+                reader.readAsArrayBuffer(file);
+            } else {
+                // Archivo de imagen — procesar con Tesseract OCR
+                Tesseract.recognize(file, "spa", { logger: m => console.log(m) })
+                    .then(({ data: { text } }) => {
+                        procesarTextoDocumento(text, p, tipoDoc);
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        p.textContent = "Error al procesar la imagen.";
+                        p.style.color = "red";
+                    });
+            }
         });
     }
+
+    configurarProcesamientoArchivo("documento", "cedula");
+    configurarProcesamientoArchivo("documentoCotizaciones", "cotizaciones");
 
     // ═══════════════════════════════════════════════════════════
     // FORMATEO DE RUT
@@ -448,20 +590,93 @@ async function enviarSolicitud(data) {
 
         if (!response.ok) {
             guardarSolicitudLocal(data);
-            alert("Solicitud enviada (pendiente de revisión).");
-            window.location.href = "Estado.html";
+            mostrarModalInfo(
+                "Solicitud en Revisión",
+                "Tu solicitud de crédito ha sido enviada (pendiente de revisión por un analista).",
+                false,
+                () => {
+                    window.location.href = "Estado.html";
+                }
+            );
             return;
         }
 
         const idServidor = result.id_credito || result.id_solicitud || result.id || result.id_simulacion;
         guardarSolicitudLocal(data, idServidor);
-        alert("Solicitud de crédito enviada correctamente al analista.");
-        window.location.href = "Estado.html";
+        mostrarModalInfo(
+            "¡Solicitud Enviada!",
+            "Tu solicitud de crédito ha sido enviada correctamente al analista para su evaluación.",
+            true,
+            () => {
+                window.location.href = "Estado.html";
+            }
+        );
 
     } catch (error) {
         console.warn("API no disponible, guardando solicitud en local:", error.message);
         guardarSolicitudLocal(data);
-        alert("Solicitud enviada correctamente.");
-        window.location.href = "Estado.html";
+        mostrarModalInfo(
+            "Solicitud Guardada",
+            "Tu solicitud se ha guardada de forma local y correcta (pendiente de revisión por el analista).",
+            true,
+            () => {
+                window.location.href = "Estado.html";
+            }
+        );
     }
+}
+
+// ═══════════════════════════════════════════════════════════
+// MODAL PERSONALIZADO (Muestra un popup estilizado en vez de alert)
+// ═══════════════════════════════════════════════════════════
+function mostrarModalInfo(titulo, mensaje, esExito, callback) {
+    const overlay = document.createElement("div");
+    overlay.className = "custom-modal-overlay";
+    
+    const iconBg = esExito ? "#eafaf1" : "#fff8e6";
+    const iconColor = esExito ? "#28a745" : "#f0ad4e";
+    const btnText = esExito ? "Ver Estado" : "Entendido";
+    
+    const svgIcon = esExito 
+        ? `<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="${iconColor}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`
+        : `<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="${iconColor}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>`;
+
+    overlay.innerHTML = `
+        <div class="custom-modal-card">
+            <div class="custom-modal-icon-container" style="background: ${iconBg};">
+                ${svgIcon}
+            </div>
+            <h3 class="custom-modal-title">${titulo}</h3>
+            <p class="custom-modal-message">${mensaje}</p>
+            <button class="custom-modal-btn">${btnText}</button>
+        </div>
+    `;
+    
+    document.body.appendChild(overlay);
+    
+    // Forzar reflow para animación
+    overlay.offsetHeight;
+    
+    // Activar animación
+    overlay.classList.add("active");
+    
+    const btn = overlay.querySelector(".custom-modal-btn");
+    const closeModal = () => {
+        overlay.classList.remove("active");
+        setTimeout(() => {
+            overlay.remove();
+            if (callback) callback();
+        }, 300);
+    };
+    
+    btn.addEventListener("click", closeModal);
+    
+    // Cerrar también con Enter/Escape
+    const keyHandler = (e) => {
+        if (e.key === "Enter" || e.key === "Escape") {
+            document.removeEventListener("keydown", keyHandler);
+            closeModal();
+        }
+    };
+    document.addEventListener("keydown", keyHandler);
 }

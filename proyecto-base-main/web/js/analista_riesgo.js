@@ -218,11 +218,19 @@ document.addEventListener('DOMContentLoaded', () => {
         backendOk = true;
       } else {
         console.error('Respuesta error del backend:', data);
-        alert(`Error al ${accion}: ${data.error || data.detalle || resp.status}`);
+        mostrarModalInfo(
+            "Error de Servidor",
+            `No se pudo ${accion} la solicitud: ${data.error || data.detalle || resp.status}`,
+            false
+        );
       }
     } catch (fetchErr) {
       console.error('No se pudo conectar al backend:', fetchErr);
-      alert('No se pudo conectar al backend. Verifica que el servidor esté corriendo en puerto 8080.');
+      mostrarModalInfo(
+          "Sin Conexión",
+          "No se pudo conectar al backend. Verifica que el servidor esté corriendo en el puerto 8080.",
+          false
+      );
     }
 
     // 2. Si el backend respondió OK (o si es localStorage-only), actualizar UI
@@ -245,3 +253,57 @@ document.addEventListener('DOMContentLoaded', () => {
   // Cargar tab inicial
   handleTabClick('evaluacion');
 });
+
+// ═══════════════════════════════════════════════════════════
+// MODAL PERSONALIZADO (POPUP)
+// ═══════════════════════════════════════════════════════════
+function mostrarModalInfo(titulo, mensaje, esExito, callback) {
+    const overlay = document.createElement("div");
+    overlay.className = "custom-modal-overlay";
+    
+    const iconBg = esExito ? "#eafaf1" : "#fff8e6";
+    const iconColor = esExito ? "#28a745" : "#f0ad4e";
+    const btnText = "Entendido";
+    
+    const svgIcon = esExito 
+        ? `<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="${iconColor}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`
+        : `<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="${iconColor}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>`;
+
+    overlay.innerHTML = `
+        <div class="custom-modal-card">
+            <div class="custom-modal-icon-container" style="background: ${iconBg};">
+                ${svgIcon}
+            </div>
+            <h3 class="custom-modal-title">${titulo}</h3>
+            <p class="custom-modal-message">${mensaje}</p>
+            <button class="custom-modal-btn">${btnText}</button>
+        </div>
+    `;
+    
+    document.body.appendChild(overlay);
+    
+    // Forzar reflow para animación
+    overlay.offsetHeight;
+    
+    // Activar animación
+    overlay.classList.add("active");
+    
+    const btn = overlay.querySelector(".custom-modal-btn");
+    const closeModal = () => {
+        overlay.classList.remove("active");
+        setTimeout(() => {
+            overlay.remove();
+            if (callback) callback();
+        }, 300);
+    };
+    
+    btn.addEventListener("click", closeModal);
+    
+    const keyHandler = (e) => {
+        if (e.key === "Enter" || e.key === "Escape") {
+            document.removeEventListener("keydown", keyHandler);
+            closeModal();
+        }
+    };
+    document.addEventListener("keydown", keyHandler);
+}

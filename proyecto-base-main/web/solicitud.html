@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ClaroFin - Solicitar Crédito</title>
     <link rel="stylesheet" href="css/simulacion.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
     <script defer src="js/navbar.js"></script>
     <script defer src="js/solicitud.js"></script>
@@ -68,9 +69,15 @@
             <h3>Datos Personales</h3>
             <p>Solo necesitamos algunos datos básicos para personalizar tu solicitud. No te preocupes: nunca compartiremos tu información.</p>
 
-            <div class="campo" style="margin-bottom: 20px;">
-                <label for="documento">¿Quieres ahorrarte digitar? Sube tu documento (PDF o Imagen)</label>
-                <input type="file" id="documento" accept=".pdf, image/png, image/jpeg">
+            <div class="form-grid-archivos" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 20px;">
+                <div class="campo">
+                    <label for="documento">Cédula de Identidad (PDF o Imagen)</label>
+                    <input type="file" id="documento" accept=".pdf, image/png, image/jpeg">
+                </div>
+                <div class="campo">
+                    <label for="documentoCotizaciones">Certificado de Cotizaciones (PDF o Imagen)</label>
+                    <input type="file" id="documentoCotizaciones" accept=".pdf, image/png, image/jpeg">
+                </div>
             </div>
 
             <div class="form-grid">

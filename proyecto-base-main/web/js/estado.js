@@ -243,14 +243,16 @@ async function confirmarFirma() {
 
   try {
       const result = await Tesseract.recognize(file, "spa", { logger: m => console.log(m) });
-      const text = result.data.text;
+      const rawText = result.data.text || "";
+      // Normalizar texto: eliminar acentos/diacríticos para soportar variantes como NÚMERO vs NUMERO, CÉDULA vs CEDULA, etc.
+      const text = rawText.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
       const rutRegex = /\d{1,2}\.?\d{3}\.?\d{3}-?[0-9kK]/;
       const rutMatch = text.match(rutRegex);
 
       // Find all 9-character alphanumeric blocks and filter out common words
       const matches = text.match(/\b[A-Z0-9]{3}[.-]?[A-Z0-9]{3}[.-]?[A-Z0-9]{3}\b/gi) || [];
-      const blacklist = ["IDENTIDAD", "DOCUMENTO", "REPUBLICA", "APELLIDOS", "PROFESION", "CATEGORIA", "SIGNATURE"];
+      const blacklist = ["IDENTIDAD", "DOCUMENTO", "NUMERO", "REPUBLICA", "APELLIDOS", "PROFESION", "CATEGORIA", "SIGNATURE"];
       const docMatch = matches.find(m => {
           const cleaned = m.replace(/[^A-Z0-9]/ig, "").toUpperCase();
           const esPalabraComun = /^[A-Z]+$/.test(cleaned) && blacklist.includes(cleaned);
@@ -312,7 +314,11 @@ async function confirmarFirma() {
               msgOcr.textContent = "Error: El carnet no coincide con el RUT ni el número de documento registrado.";
               msgOcr.style.color = "red";
           }
-          alert("Validación fallida: Cédula de identidad no coincide con el registro del crédito.");
+          mostrarModalInfo(
+              "Validación Fallida",
+              "La cédula de identidad no coincide con el registro del crédito.",
+              false
+          );
       }
   } catch (error) {
       console.error("Error en OCR:", error);
@@ -380,3 +386,57 @@ document.addEventListener('DOMContentLoaded', () => {
 
   renderTodo();
 });
+
+// ═══════════════════════════════════════════════════════════
+// MODAL PERSONALIZADO (POPUP)
+// ═══════════════════════════════════════════════════════════
+function mostrarModalInfo(titulo, mensaje, esExito, callback) {
+    const overlay = document.createElement("div");
+    overlay.className = "custom-modal-overlay";
+    
+    const iconBg = esExito ? "#eafaf1" : "#fff8e6";
+    const iconColor = esExito ? "#28a745" : "#f0ad4e";
+    const btnText = "Entendido";
+    
+    const svgIcon = esExito 
+        ? `<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="${iconColor}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`
+        : `<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="${iconColor}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>`;
+
+    overlay.innerHTML = `
+        <div class="custom-modal-card">
+            <div class="custom-modal-icon-container" style="background: ${iconBg};">
+                ${svgIcon}
+            </div>
+            <h3 class="custom-modal-title">${titulo}</h3>
+            <p class="custom-modal-message">${mensaje}</p>
+            <button class="custom-modal-btn">${btnText}</button>
+        </div>
+    `;
+    
+    document.body.appendChild(overlay);
+    
+    // Forzar reflow para animación
+    overlay.offsetHeight;
+    
+    // Activar animación
+    overlay.classList.add("active");
+    
+    const btn = overlay.querySelector(".custom-modal-btn");
+    const closeModal = () => {
+        overlay.classList.remove("active");
+        setTimeout(() => {
+            overlay.remove();
+            if (callback) callback();
+        }, 300);
+    };
+    
+    btn.addEventListener("click", closeModal);
+    
+    const keyHandler = (e) => {
+        if (e.key === "Enter" || e.key === "Escape") {
+            document.removeEventListener("keydown", keyHandler);
+            closeModal();
+        }
+    };
+    document.addEventListener("keydown", keyHandler);
+}
