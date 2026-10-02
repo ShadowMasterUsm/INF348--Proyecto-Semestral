@@ -26,7 +26,7 @@ Luego, el nuevo punto de mejora es tener la capacidad de extraer los datos desde
 ## Para levantar el proyecto
 
 * Paso 1: Descargar el archivo proyecto-base-main.zip y descomprimirlo.
-* Paso 2: En la carpeta principal abrir una terminal y levantar los contenedores de MySQL y API_TRAMITACION con el siguiente comando:
+* Paso 2: En la carpeta principal (proyecto-base-main) abrir una terminal y levantar los contenedores de MySQL y API_TRAMITACION con el siguiente comando:
 ```
 docker compose up --build -d
 ```
